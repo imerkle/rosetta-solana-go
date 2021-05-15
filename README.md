@@ -32,7 +32,7 @@ all Rosetta implementations must be deployable via Docker and support running vi
 ### Direct Install
 After cloning this repository, run:
 ```text
-cargo run build --release
+go build -o rosettasolanago
 ```
 
 ## Testing with rosetta-cli
