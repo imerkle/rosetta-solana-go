@@ -115,8 +115,7 @@ var (
 
 	// CallMethods are all supported call methods.
 	CallMethods = []string{
-		"getProgramAccounts",
-		"getClusterNodes",
+		"deregisterNode", "validatorExit", "getAccountInfo", "getBalance", "getBlockTime", "getClusterNodes", "getConfirmedBlock", "getConfirmedBlocks", "getConfirmedBlocksWithLimit", "getConfirmedSignaturesForAddress", "getConfirmedSignaturesForAddress2", "getConfirmedTransaction", "getEpochInfo", "getEpochSchedule", "getFeeCalculatorForBlockhash", "getFeeRateGovernor", "getFees", "getFirstAvailableBlock", "getGenesisHash", "getHealth", "getIdentity", "getInflationGovernor", "getInflationRate", "getLargestAccounts", "getLeaderSchedule", "getMinimumBalanceForRentExemption", "getMultipleAccounts", "getProgramAccounts", "getRecentBlockhash", "getSnapshotSlot", "getSignatureStatuses", "getSlot", "getSlotLeader", "getStorageTurn", "getStorageTurnRate", "getSlotsPerSegment", "getStoragePubkeysForSlot", "getSupply", "getTokenAccountBalance", "getTokenAccountsByDelegate", "getTokenAccountsByOwner", "getTokenSupply", "getTotalSupply", "getTransactionCount", "getVersion", "getVoteAccounts", "minimumLedgerSlot", "registerNode", "requestAirdrop", "sendTransaction", "simulateTransaction", "signVote",
 	}
 )
 
