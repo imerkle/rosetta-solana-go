@@ -38,8 +38,8 @@ go build -o rosettasolanago
 ## Testing with rosetta-cli
 To validate `rosetta-solana`, [install `rosetta-cli`](https://github.com/coinbase/rosetta-cli#install)
 and run one of the following commands:
-* `rosetta-cli check:data --configuration-file rosetta-cli-conf/devnet.json`
-* `rosetta-cli check:construction --configuration-file rosetta-cli-conf/devnet.json`
+* `rosetta-cli check:data --configuration-file rosetta-cli-conf/testnet/devnet.json`
+* `rosetta-cli check:construction --configuration-file rosetta-cli-conf/testnet/devnet.json`
 
 ## Development
 * `RPC_URL=https://devnet.solana.com PORT=8080 NETWORK=TESTNET MODE=ONLINE go run *.go run` to run server

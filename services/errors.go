@@ -33,7 +33,6 @@ var (
 		ErrCallParametersInvalid,
 		ErrCallOutputMarshal,
 		ErrCallMethodInvalid,
-		ErrBlockOrphaned,
 		ErrInvalidAddress,
 		ErrGethNotReady,
 	}
@@ -141,7 +140,7 @@ var (
 	// cannot yet serve any queries.
 	ErrGethNotReady = &types.Error{
 		Code:      13, //nolint
-		Message:   "geth not ready",
+		Message:   "node not ready",
 		Retriable: true,
 	}
 )
