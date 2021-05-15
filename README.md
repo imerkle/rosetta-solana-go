@@ -41,8 +41,6 @@ and run one of the following commands:
 * `rosetta-cli check:data --configuration-file rosetta-cli-conf/devnet.json`
 * `rosetta-cli check:construction --configuration-file rosetta-cli-conf/devnet.json`
 
-Note: If cli test gives EOF error it's probably due to golang trying to reuse connection and server closing it. I have disabled keep-alive for that reason. It's recommended to run cli test in dev mode.
-
 ## Development
 * `RPC_URL=https://devnet.solana.com PORT=8080 NETWORK=TESTNET MODE=ONLINE go run *.go run` to run server
 
