@@ -115,7 +115,8 @@ var (
 
 	// CallMethods are all supported call methods.
 	CallMethods = []string{
-		"GetProgramAccounts",
+		"getProgramAccounts",
+		"getClusterNodes",
 	}
 )
 

@@ -64,11 +64,11 @@ Note: If cli test gives EOF error it's probably due to golang trying to reuse co
     /construction/payloads (construction_payloads)
     /construction/preprocess (construction_preprocess)
     /construction/submit (construction_submit)
+    /call (call)
         
 ```
 ### Endpoints Yet to be Implemented
 ```
-    /call (call)
     /construction/parse (construction_parse)
 ```
 #### Default environment variables
@@ -89,7 +89,7 @@ See `types::OperationType` to see full list of current operations supported . Th
 
     Unknown,
 ```
-See https://github.com/imerkle/rosetta-solana-go/blob/master/OPERATIONS.md for examples of request body for every operations
+See https://github.com/imerkle/rosetta-solana-go/blob/master/USAGE.md for examples of request body for every operations
 ## TODO
 
  * Add more ops

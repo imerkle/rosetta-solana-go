@@ -104,3 +104,28 @@
     }
 }
 ```
+
+
+##### json request body for `/call`
+
+
+```
+{
+    "network_identifier": {
+        "blockchain": "solana",
+        "network": "devnet"
+    },
+    "method": "getProgramAccounts",
+    "parameters": {"param": ["Feat1YXHhH6t1juaWF74WLcfv4XoNocjXA6sPWHNgAse"]}
+}
+```
+```
+{
+    "network_identifier": {
+        "blockchain": "solana",
+        "network": "devnet"
+    },
+    "method": "getClusterNodes",
+    "parameters": {}
+}
+```

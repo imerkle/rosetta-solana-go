@@ -56,7 +56,7 @@ var (
 	// errors on a request.
 	ErrGeth = &types.Error{
 		Code:    2, //nolint
-		Message: "geth error",
+		Message: "solana node error",
 	}
 
 	// ErrUnableToDecompressPubkey is returned when

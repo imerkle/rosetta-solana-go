@@ -137,7 +137,6 @@ func toBlockNumArg(number *big.Int) string {
 }
 
 func (ec *Client) GetRecentBlockhash(ctx context.Context) (out *dfuserpc.GetRecentBlockhashResult, err error) {
-	fmt.Println(ec.dfuseRpc.GetRecentBlockhash(ctx, ""))
 	return ec.dfuseRpc.GetRecentBlockhash(ctx, "")
 }
 func (ec *Client) GetConfirmedBlock(ctx context.Context, slot uint64, encoding string) (out *GetConfirmedBlockResult, err error) {
@@ -349,14 +348,27 @@ func (ec *Client) Call(
 	request *RosettaTypes.CallRequest,
 ) (*RosettaTypes.CallResponse, error) {
 
-	var out map[string]interface{}
-	param := request.Parameters["param"]
-	err := ec.rpc.CallFor(&out, request.Method, param)
+	var out interface{}
+	var err error
+	if p, ok := request.Parameters["param"]; ok {
+		err = ec.rpc.CallFor(&out, request.Method, p)
+	} else {
+		err = ec.rpc.CallFor(&out, request.Method)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("rpc call error")
 	}
+
+	res := make(map[string]interface{})
+	if _, ok := out.([]interface{}); ok {
+		res["result"] = out
+	} else {
+		res["result"] = out.(map[string]interface{})
+	}
+
 	return &RosettaTypes.CallResponse{
-		Result: out,
+		Result: res,
 	}, nil
 
 }

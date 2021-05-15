@@ -45,7 +45,6 @@ func (s *CallAPIService) Call(
 	if s.config.Mode != configuration.Online {
 		return nil, ErrUnavailableOffline
 	}
-
 	response, err := s.client.Call(ctx, request)
 	if err != nil {
 		return nil, wrapErr(ErrGeth, err)

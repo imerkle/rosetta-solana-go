@@ -162,7 +162,6 @@ func GetRosOperationsFromTx(tx rpc.TransactionParsed, status string) []*types.Op
 			inrec, _ := json.Marshal(parsedInstructionMetaInterface)
 			json.Unmarshal(inrec, &inInterface)
 
-			fmt.Println(parsedInstructionMetaInterface)
 			if IsBalanceChanging(opType) {
 				if parsedInstructionMeta.Mint == "" {
 					parsedInstructionMeta.Mint = Symbol
