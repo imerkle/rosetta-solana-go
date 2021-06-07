@@ -64,6 +64,10 @@ func (s *BlockAPIService) BlockTransaction(
 	ctx context.Context,
 	request *types.BlockTransactionRequest,
 ) (*types.BlockTransactionResponse, *types.Error) {
+	if s.config.Mode != configuration.Online {
+		return nil, ErrUnavailableOffline
+	}
+
 	tx, err := s.client.BlockTransaction(ctx, request)
 	if err != nil {
 		return nil, wrapErr(ErrGeth, err)

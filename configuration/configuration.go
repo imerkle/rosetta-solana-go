@@ -22,6 +22,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
+	ss "github.com/portto/solana-go-sdk/client"
 )
 
 // Mode is the setting that determines if
@@ -37,15 +38,11 @@ const (
 	// to make outbound connections.
 	Offline Mode = "OFFLINE"
 
-	// Mainnet is the Bitcoin Mainnet.
 	Mainnet string = "MAINNET"
 
-	// Testnet is Bitcoin Testnet3.
 	Testnet string = "TESTNET"
 
-	// DataDirectory is the default location for all
-	// persistent data.
-	DataDirectory = "/data"
+	Devnet string = "DEVNET"
 
 	// ModeEnv is the environment variable read
 	// to determine mode.
@@ -110,18 +107,26 @@ func LoadConfiguration() (*Configuration, error) {
 			Network:    solanago.MainnetNetwork,
 		}
 		config.GenesisBlockIdentifier = solanago.MainnetGenesisBlockIdentifier
+		config.GethURL = ss.MainnetRPCEndpoint
 	case Testnet:
 		config.Network = &types.NetworkIdentifier{
 			Blockchain: solanago.Blockchain,
 			Network:    solanago.TestnetNetwork,
 		}
 		config.GenesisBlockIdentifier = solanago.TestnetGenesisBlockIdentifier
+		config.GethURL = ss.TestnetRPCEndpoint
+	case Devnet:
+		config.Network = &types.NetworkIdentifier{
+			Blockchain: solanago.Blockchain,
+			Network:    solanago.DevnetNetwork,
+		}
+		config.GenesisBlockIdentifier = solanago.TestnetGenesisBlockIdentifier
+		config.GethURL = ss.DevnetRPCEndpoint
 	case "":
 		return nil, errors.New("NETWORK must be populated")
 	default:
 		return nil, fmt.Errorf("%s is not a valid network", networkValue)
 	}
-	config.GethURL = DefaultGethURL
 	envGethURL := os.Getenv(GethEnv)
 	if len(envGethURL) > 0 {
 		config.RemoteGeth = true

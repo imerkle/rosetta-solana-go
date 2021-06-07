@@ -34,7 +34,11 @@ After cloning this repository, run:
 ```text
 go build -o rosettasolanago
 ```
-
+### docker
+```
+docker build -t rosetta-sol-go .
+RPC_URL=https://api.mainnet-beta.solana.com PORT=8080 NETWORK=MAINNET MODE=ONLINE docker-compose up
+```
 ## Testing with rosetta-cli
 To validate `rosetta-solana`, [install `rosetta-cli`](https://github.com/coinbase/rosetta-cli#install)
 and run one of the following commands:
@@ -69,12 +73,12 @@ and run one of the following commands:
 ```
     /construction/parse (construction_parse)
 ```
-#### Default environment variables
+#### Environment variables
 ```
-RPC_URL = "https://devnet.solana.com"
-NETWORK = "devnet"
-PORT = "8080"
-MODE = "ONLINE" //ONLINE/OFFLINE
+RPC_URL = "https://api.mainnet-beta.solana.com" (optional)
+NETWORK = "MAINNET" //MAINNET/TESTNET/DEVNET (required)
+PORT = "8080" (optional)
+MODE = "ONLINE" //ONLINE/OFFLINE (required)
 ```
 
 #### Operations supported

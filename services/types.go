@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
-	"github.com/dfuse-io/solana-go/rpc"
+	ss "github.com/portto/solana-go-sdk/client"
 )
 
 // Client is used by the servicers to get block
@@ -54,8 +54,8 @@ type Client interface {
 	) (*types.CallResponse, error)
 }
 type ConstructionMetadata struct {
-	BlockHash     string            `json:"blockhash"`
-	FeeCalculator rpc.FeeCalculator `json:"fee_calculator"`
+	BlockHash     string           `json:"blockhash"`
+	FeeCalculator ss.FeeCalculator `json:"fee_calculator"`
 }
 
 type MetadataWithFee struct {

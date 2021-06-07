@@ -4,16 +4,16 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	RosettaTypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/system"
-	"github.com/dfuse-io/solana-go/programs/token"
-	"github.com/dfuse-io/solana-go/rpc"
-	dfuserpc "github.com/dfuse-io/solana-go/rpc"
+	ss "github.com/portto/solana-go-sdk/client"
+	common "github.com/portto/solana-go-sdk/common"
+
 	"github.com/iancoleman/strcase"
 )
 
@@ -123,18 +123,18 @@ func unpackPubkeyOption(input []byte) ([]byte, []byte, error) {
 	}
 	return nil, nil, fmt.Errorf("Invalid instruction")
 }
-func GetRosOperationsFromTx(tx rpc.TransactionParsed, status string) []*types.Operation {
+func GetRosOperationsFromTx(tx ss.ParsedTransaction, status string) []*types.Operation {
 	//	hash := tx.Transaction.Signatures[0].String()
 	opIndex := int64(0)
 	var operations []*types.Operation
-	for _, ins := range tx.Transaction.Message.Instructions {
+	for _, ins := range tx.Message.Instructions {
 
 		oi := types.OperationIdentifier{
 			Index: opIndex,
 		}
 		opIndex += 1
 
-		if !ins.IsParsed() {
+		if ins.Parsed != nil {
 
 			var inInterface map[string]interface{}
 			inrec, _ := json.Marshal(ins)
@@ -235,28 +235,28 @@ func GetRosOperationsFromTx(tx rpc.TransactionParsed, status string) []*types.Op
 func programFromId(programId string) string {
 	program := "unknown"
 	switch programId {
-	case system.PROGRAM_ID.String():
+	case common.SystemProgramID.ToBase58():
 		program = "system"
 		break
-	case token.TOKEN_PROGRAM_ID.String():
+	case common.TokenProgramID.ToBase58():
 		program = "spl-token"
 		break
 	}
 	return program
 }
 
-func ToRosTxs(txs []dfuserpc.TransactionParsed) []*RosettaTypes.Transaction {
+func ToRosTxs(txs []ss.ParsedTransactionWithMeta) []*RosettaTypes.Transaction {
 	var rtxs []*RosettaTypes.Transaction
 	for _, tx := range txs {
-		rtx := ToRosTx(tx)
+		rtx := ToRosTx(tx.Transaction)
 		rtxs = append(rtxs, &rtx)
 	}
 	return rtxs
 }
-func ToRosTx(tx dfuserpc.TransactionParsed) RosettaTypes.Transaction {
+func ToRosTx(tx ss.ParsedTransaction) RosettaTypes.Transaction {
 	return RosettaTypes.Transaction{
 		TransactionIdentifier: &RosettaTypes.TransactionIdentifier{
-			Hash: tx.Transaction.Signatures[0].String(),
+			Hash: tx.Signatures[0],
 		},
 		Operations: GetRosOperationsFromTx(tx, SuccessStatus),
 		Metadata:   map[string]interface{}{},
@@ -271,4 +271,26 @@ func Contains(s []string, str string) bool {
 	}
 
 	return false
+}
+func EncodeBig(bigint *big.Int) string {
+	nbits := bigint.BitLen()
+	if nbits == 0 {
+		return "0x0"
+	}
+	return fmt.Sprintf("%#x", bigint)
+}
+
+func convertTime(time uint64) int64 {
+	return int64(time) * 1000
+}
+
+func GetWithNonce(m map[string]interface{}) (WithNonce, bool) {
+	var withNonce WithNonce
+	hasNonce := false
+	if w, ok := m[WithNonceKey]; ok {
+		j, _ := json.Marshal(w)
+		json.Unmarshal(j, &withNonce)
+		hasNonce = true
+	}
+	return withNonce, hasNonce
 }

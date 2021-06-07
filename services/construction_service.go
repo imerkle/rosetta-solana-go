@@ -22,7 +22,8 @@ import (
 	"github.com/imerkle/rosetta-solana-go/configuration"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
 	"github.com/mr-tron/base58"
-	solPCommon "github.com/portto/solana-go-sdk/common"
+	ss "github.com/portto/solana-go-sdk/client"
+	"github.com/portto/solana-go-sdk/common"
 	"github.com/portto/solana-go-sdk/sysprog"
 	"github.com/portto/solana-go-sdk/tokenprog"
 	solPTypes "github.com/portto/solana-go-sdk/types"
@@ -61,20 +62,17 @@ func (s *ConstructionAPIService) ConstructionDerive(
 	}, nil
 }
 
-type WithNonce struct {
-	Account   string
-	Authority string
-}
-
 // ConstructionPreprocess implements the /construction/preprocess
 // endpoint.
 func (s *ConstructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
-	//TODO: add preprocess
+	withNonce, _ := solanago.GetWithNonce(request.Metadata)
 	return &types.ConstructionPreprocessResponse{
-		Options: nil,
+		Options: map[string]interface{}{
+			solanago.WithNonceKey: withNonce,
+		},
 	}, nil
 }
 
@@ -86,25 +84,30 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 	if s.config.Mode != configuration.Online {
 		return nil, ErrUnavailableOffline
 	}
-	recentBlockhash, _ := s.client.GetRecentBlockhash(ctx)
 
-	/*
-		TODO: Add nonce
-		withNonce := request.Options["with_nonce"]
-		if withNonce == nil {
-		}else{
-
-		}
-	*/
+	var hash string
+	var fee ss.FeeCalculator
+	withNonce, hasNonce := solanago.GetWithNonce(request.Options)
+	if hasNonce {
+		acc, _ := s.client.Rpc.GetAccountInfoParsed(ctx, withNonce.Account)
+		withNonce.Authority = acc.Data.Nonce.Initialized.Authority
+		hash = acc.Data.Nonce.Initialized.BlockHash
+		fee = acc.Data.Nonce.Initialized.FeeCalculator
+	} else {
+		recentBlockhash, _ := s.client.Rpc.GetRecentBlockhash(ctx)
+		hash = recentBlockhash.Blockhash
+		fee = recentBlockhash.FeeCalculator
+	}
 	meta, _ := marshalJSONMap(ConstructionMetadata{
-		BlockHash:     recentBlockhash.Value.Blockhash.String(),
-		FeeCalculator: recentBlockhash.Value.FeeCalculator,
+		BlockHash:     hash,
+		FeeCalculator: fee,
 	})
+
 	return &types.ConstructionMetadataResponse{
 		Metadata: meta,
 		SuggestedFee: []*types.Amount{
 			{
-				Value:    strconv.FormatInt(int64(recentBlockhash.Value.FeeCalculator.LamportsPerSignature), 10),
+				Value:    strconv.FormatInt(int64(fee.LamportsPerSignature), 10),
 				Currency: solanago.Currency,
 			},
 		},
@@ -165,7 +168,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 		switch fromOp.Type {
 		case solanago.System__Transfer:
 			amt, _ := strconv.ParseInt(toOp.Amount.Value, 10, 64)
-			ins = sysprog.Transfer(solPCommon.PublicKeyFromString(fromAdd), solPCommon.PublicKeyFromString(toAdd), uint64(amt))
+			ins = sysprog.Transfer(common.PublicKeyFromString(fromAdd), common.PublicKeyFromString(toAdd), uint64(amt))
 			if !solanago.Contains(signers, fromAdd) {
 				signers = append(signers, fromAdd)
 			}
@@ -176,30 +179,27 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			if !solanago.Contains(signers, authority) {
 				signers = append(signers, authority)
 			}
-			ins = tokenprog.Transfer(solPCommon.PublicKeyFromString(fromAdd), solPCommon.PublicKeyFromString(toAdd), solPCommon.PublicKeyFromString(authority), []solPCommon.PublicKey{solPCommon.PublicKeyFromString(authority)}, uint64(amt))
+			ins = tokenprog.Transfer(common.PublicKeyFromString(fromAdd), common.PublicKeyFromString(toAdd), common.PublicKeyFromString(authority), []common.PublicKey{common.PublicKeyFromString(authority)}, uint64(amt))
 			break
 		}
 		instructions = append(instructions, ins)
 	}
-	feePayer := solPCommon.PublicKeyFromString(signers[0])
+	feePayer := common.PublicKeyFromString(signers[0])
 	// Convert map to Metadata struct
 	var meta ConstructionMetadata
-
-	//remove
-	/*
-		m, _ := s.ConstructionMetadata(ctx, &types.ConstructionMetadataRequest{
-			NetworkIdentifier: request.NetworkIdentifier,
-		})
-		request.Metadata = m.Metadata
-	*/
-	//remove end
 
 	if err := unmarshalJSONMap(request.Metadata, &meta); err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 	blockHash := meta.BlockHash
-	//TODO: Nonce message
-	message := solPTypes.NewMessage(feePayer, instructions, blockHash)
+	var message solPTypes.Message
+
+	withNonce, hasNonce := solanago.GetWithNonce(request.Metadata)
+	if hasNonce {
+		message = ss.NewMessageWithNonce(feePayer, instructions, common.PublicKeyFromString(withNonce.Account), common.PublicKeyFromString(withNonce.Authority))
+	} else {
+		message = solPTypes.NewMessage(feePayer, instructions, blockHash)
+	}
 	//TODO: use suggestedFee somewhere
 
 	//unsigned signature
@@ -230,31 +230,6 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
-	//remove
-	/*
-		privb, _ := hex.DecodeString("cb1a134c296fbf309d78fe9378c18bc129e5045fbe92d2ad8577ccc84689d4ef")
-		pbk, _ := hex.DecodeString("f22742d48ce6eeb0c062237b04a5b7f57bfeb8803e9287cd8a112320860e307a")
-		pk := ed25519.PrivateKey(append(privb, pbk...))
-		c, _ := s.ConstructionCombine(ctx, &types.ConstructionCombineRequest{
-			NetworkIdentifier:   request.NetworkIdentifier,
-			UnsignedTransaction: base58.Encode(txUnsigned),
-			Signatures: []*types.Signature{
-				{
-					SigningPayload: signingPayloads[0],
-					PublicKey:      &types.PublicKey{Bytes: pbk, CurveType: types.Edwards25519},
-					SignatureType:  types.Ed25519,
-					Bytes:          ed25519.Sign(pk, msgBytes),
-				},
-			},
-		})
-		xxx, errx := s.ConstructionSubmit(ctx, &types.ConstructionSubmitRequest{
-			NetworkIdentifier: request.NetworkIdentifier,
-			SignedTransaction: c.SignedTransaction,
-		})
-		fmt.Println(errx)
-		fmt.Println(xxx.TransactionIdentifier.Hash)
-	*/
-	//remove end
 
 	return &types.ConstructionPayloadsResponse{
 		UnsignedTransaction: base58.Encode(txUnsigned),
@@ -262,7 +237,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	}, nil
 }
 
-func GetSigningKeypairPositions(message solPTypes.Message, pubKeys []solPCommon.PublicKey) ([]uint, *types.Error) {
+func GetSigningKeypairPositions(message solPTypes.Message, pubKeys []common.PublicKey) ([]uint, *types.Error) {
 	if len(message.Accounts) < int(message.Header.NumRequireSignatures) {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, fmt.Errorf("invalid positions"))
 	}
@@ -276,7 +251,7 @@ func GetSigningKeypairPositions(message solPTypes.Message, pubKeys []solPCommon.
 	}
 	return positions, nil
 }
-func indexOf(element solPCommon.PublicKey, data []solPCommon.PublicKey) int {
+func indexOf(element common.PublicKey, data []common.PublicKey) int {
 	for k, v := range data {
 		if element == v {
 			return k
@@ -296,9 +271,9 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
-	var pubKeys []solPCommon.PublicKey
+	var pubKeys []common.PublicKey
 	for _, s := range request.Signatures {
-		pubKeys = append(pubKeys, solPCommon.PublicKeyFromBytes(s.PublicKey.Bytes))
+		pubKeys = append(pubKeys, common.PublicKeyFromBytes(s.PublicKey.Bytes))
 	}
 	positions, errr := GetSigningKeypairPositions(tx.Message, pubKeys)
 	if errr != nil {
@@ -384,7 +359,11 @@ func (s *ConstructionAPIService) ConstructionSubmit(
 	if s.config.Mode != configuration.Online {
 		return nil, ErrUnavailableOffline
 	}
-	hash, err := s.client.SendTransaction(ctx, request.SignedTransaction)
+	hash, err := s.client.Rpc.SendTransaction(ctx, request.SignedTransaction, ss.SendTransactionConfig{
+		SkipPreflight:       false,
+		PreflightCommitment: "max",
+		Encoding:            "base58",
+	})
 	if err != nil {
 		return nil, wrapErr(ErrBroadcastFailed, err)
 	}

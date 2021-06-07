@@ -17,71 +17,25 @@ package solanago
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"strconv"
 
 	RosettaTypes "github.com/coinbase/rosetta-sdk-go/types"
-	dfuserpc "github.com/dfuse-io/solana-go/rpc"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/portto/solana-go-sdk/client"
-	"github.com/portto/solana-go-sdk/common"
-	"github.com/ybbus/jsonrpc"
+	ss "github.com/portto/solana-go-sdk/client"
 )
 
 type Client struct {
-	dfuseRpc *dfuserpc.Client
-	rpc      jsonrpc.RPCClient
+	Rpc *ss.Client
 }
 
 // NewClient creates a Client that from the provided url and params.
 func NewClient(url string) (*Client, error) {
-	dfuseRpc := dfuserpc.NewClient(url)
-	rpc := jsonrpc.NewClient(url)
+	rpc := ss.NewClient(url)
 
-	return &Client{dfuseRpc, rpc}, nil
+	return &Client{Rpc: rpc}, nil
 }
 
 // Close shuts down the RPC client connection.
 func (ec *Client) Close() {
-}
-
-func (ec *Client) GetGenesisHash(ctx context.Context) (out *string, err error) {
-
-	params := []interface{}{}
-
-	err = ec.rpc.CallFor(&out, "getGenesisHash", params...)
-	return
-}
-func (ec *Client) getFirstAvailableBlock(ctx context.Context) (out *uint64, err error) {
-
-	params := []interface{}{}
-
-	err = ec.rpc.CallFor(&out, "getFirstAvailableBlock", params...)
-	return
-}
-
-func (ec *Client) getBlockTime(ctx context.Context, slot uint64) (out *uint64, err error) {
-
-	params := []interface{}{slot}
-
-	err = ec.rpc.CallFor(&out, "getBlockTime", params...)
-	return
-}
-
-type ClusterNodeResult struct {
-	Gossip  string `json:gossip`
-	Pubkey  string `json:pubkey`
-	Rpc     string `json:rpc`
-	Tpu     string `json:tpu`
-	Version string `json:version`
-}
-
-func (ec *Client) getClusterNodes(ctx context.Context) (out []ClusterNodeResult, err error) {
-
-	params := []interface{}{}
-
-	err = ec.rpc.CallFor(&out, "getClusterNodes", params...)
-	return
 }
 
 // Status returns geth status information
@@ -93,76 +47,39 @@ func (ec *Client) Status(ctx context.Context) (
 	*RosettaTypes.BlockIdentifier,
 	error,
 ) {
-	genesis, _ := ec.GetGenesisHash(ctx)
-	index, _ := ec.getFirstAvailableBlock(ctx)
+	genesis, _ := ec.Rpc.GetGenesisHash(ctx)
+	index, _ := ec.Rpc.GetFirstAvailableBlock(ctx)
 
-	slot, _ := ec.dfuseRpc.GetSlot(ctx, "")
-	slotTime, _ := ec.getBlockTime(ctx, uint64(slot))
-	clusterNodes, _ := ec.getClusterNodes(ctx)
+	bhash, _ := ec.Rpc.GetRecentBlockhash(ctx)
+	slot, _ := ec.Rpc.GetSlot(ctx)
+	slotTime, _ := ec.Rpc.GetBlockTime(ctx, uint64(slot))
+	clusterNodes, _ := ec.Rpc.GetClusterNodes(ctx)
 	var peers []*RosettaTypes.Peer
 	for _, k := range clusterNodes {
 		peers = append(peers, &RosettaTypes.Peer{PeerID: k.Pubkey})
 	}
-
 	return &RosettaTypes.BlockIdentifier{
-			Hash:  strconv.FormatInt(int64(slot), 10), //TODO: should be hash not slot
+			Hash:  bhash.Blockhash,
 			Index: int64(slot),
 		},
-		convertTime(*slotTime),
+		convertTime(uint64(slotTime)),
 		peers,
 		&RosettaTypes.BlockIdentifier{
-			Hash:  *genesis,
-			Index: int64(*index),
+			Hash:  genesis,
+			Index: int64(index),
 		},
 		nil
 }
 
-// SendTransaction injects a signed transaction into the pending pool for execution.
-func (ec *Client) SendTransaction(ctx context.Context, txString string) (out string, err error) {
-	params := []interface{}{txString}
-
-	err = ec.rpc.CallFor(&out, "sendTransaction", params...)
-	return
-}
-
-func toBlockNumArg(number *big.Int) string {
-	if number == nil {
-		return "latest"
-	}
-	pending := big.NewInt(-1)
-	if number.Cmp(pending) == 0 {
-		return "pending"
-	}
-	return hexutil.EncodeBig(number)
-}
-
-func (ec *Client) GetRecentBlockhash(ctx context.Context) (out *dfuserpc.GetRecentBlockhashResult, err error) {
-	return ec.dfuseRpc.GetRecentBlockhash(ctx, "")
-}
-func (ec *Client) GetConfirmedBlock(ctx context.Context, slot uint64, encoding string) (out *GetConfirmedBlockResult, err error) {
-	if encoding == "" {
-		encoding = "json"
-	}
-	params := []interface{}{slot, encoding}
-
-	err = ec.rpc.CallFor(&out, "getConfirmedBlock", params...)
-	return
-}
-func (c *Client) GetConfirmedTransaction(ctx context.Context, signature string) (out dfuserpc.TransactionParsed, err error) {
-	params := []interface{}{signature, "jsonParsed"}
-
-	err = c.rpc.CallFor(&out, "getConfirmedTransaction", params...)
-	return
-}
 func (ec *Client) BlockTransaction(
 	ctx context.Context,
 	blockTransactionRequest *RosettaTypes.BlockTransactionRequest,
 ) (*RosettaTypes.Transaction, error) {
-	tx, err := ec.GetConfirmedTransaction(ctx, blockTransactionRequest.TransactionIdentifier.Hash)
+	tx, err := ec.Rpc.GetConfirmedTransactionParsed(ctx, blockTransactionRequest.TransactionIdentifier.Hash)
 	if err != nil {
 		return nil, fmt.Errorf("Error tx")
 	}
-	rosTx := ToRosTx(tx)
+	rosTx := ToRosTx(tx.Transaction)
 	return &rosTx, nil
 }
 
@@ -175,16 +92,16 @@ func (ec *Client) Block(
 ) (*RosettaTypes.Block, error) {
 	if blockIdentifier != nil {
 		if blockIdentifier.Index != nil {
-			blockResponse, err := ec.GetConfirmedBlock(ctx, uint64(*blockIdentifier.Index), "jsonParsed")
+			blockResponse, err := ec.Rpc.GetConfirmedBlockParsed(ctx, uint64(*blockIdentifier.Index))
 			if err != nil {
 				return nil, err
 			}
 			return &RosettaTypes.Block{
 				BlockIdentifier: &RosettaTypes.BlockIdentifier{
 					Index: *blockIdentifier.Index,
-					Hash:  blockResponse.Blockhash.String(),
+					Hash:  blockResponse.Blockhash,
 				},
-				ParentBlockIdentifier: &RosettaTypes.BlockIdentifier{Index: int64(blockResponse.ParentSlot), Hash: blockResponse.PreviousBlockhash.String()},
+				ParentBlockIdentifier: &RosettaTypes.BlockIdentifier{Index: int64(blockResponse.ParentSlot), Hash: blockResponse.PreviousBlockhash},
 				Timestamp:             convertTime(uint64(blockResponse.BlockTime)),
 				Transactions:          ToRosTxs(blockResponse.Transactions),
 				Metadata:              map[string]interface{}{},
@@ -192,87 +109,6 @@ func (ec *Client) Block(
 		}
 	}
 	return nil, fmt.Errorf("block fetch error")
-}
-
-func convertTime(time uint64) int64 {
-	return int64(time) * 1000
-}
-
-//token account
-
-type TokenAccountsOwner struct {
-	Pubkey  *string  `json:"pubkey"`
-	Account *Account `json:"account"`
-}
-type TokenAmount struct {
-	Amount         string  `json:"amount"`
-	Decimals       int32   `json:"decimals"`
-	UIAmount       float64 `json:"uiAmount"`
-	UIAmountString string  `json:"uiAmountString"`
-}
-type Info struct {
-	Delegate        string      `json:"delegate"`
-	DelegatedAmount int64       `json:"delegatedAmount"`
-	IsInitialized   bool        `json:"isInitialized"`
-	IsNative        bool        `json:"isNative"`
-	Mint            string      `json:"mint"`
-	Owner           string      `json:"owner"`
-	TokenAmount     TokenAmount `json:"tokenAmount"`
-}
-type Parsed struct {
-	AccountType string `json:"accountType"`
-	Info        Info   `json:"info"`
-}
-type Data struct {
-	Parsed  Parsed `json:"parsed"`
-	Program string `json:"program"`
-}
-type Account struct {
-	Data       Data   `json:"data"`
-	Executable bool   `json:"executable"`
-	Lamports   int64  `json:"lamports"`
-	Owner      string `json:"owner"`
-	RentEpoch  int64  `json:"rentEpoch"`
-}
-
-type Value struct {
-	Account Account `json:"account"`
-}
-type TokenAccountResponse struct {
-	dfuserpc.RPCContext
-	Value []Value `json:"value"`
-}
-
-func (ec *Client) TokenAccounts(account string) (out *TokenAccountResponse, err error) {
-
-	obj := map[string]interface{}{
-		"programId": common.TokenProgramID.ToBase58(),
-	}
-	obj2 := map[string]interface{}{
-		"encoding": "jsonParsed",
-	}
-	params := []interface{}{account, obj, obj2}
-	err = ec.rpc.CallFor(&out, "getTokenAccountsByOwner", params...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (ec *Client) GetSlot(commitment client.Commitment) (out uint64, err error) {
-	var params []interface{}
-	if commitment != "" {
-		params = append(params, string(commitment))
-	}
-
-	err = ec.rpc.CallFor(&out, "getSlot", params...)
-	return
-}
-func (ec *Client) GetBlockTime() (out uint64, err error) {
-	var params []interface{}
-
-	err = ec.rpc.CallFor(&out, "getBlockTime", params...)
-	return
 }
 
 // Balance returns the balance of a *RosettaTypes.AccountIdentifier
@@ -293,13 +129,13 @@ func (ec *Client) Balance(
 		return nil, fmt.Errorf("block hash balance not supported")
 	}
 
-	bal, err := ec.dfuseRpc.GetBalance(ctx, account.Address, "")
+	bal, err := ec.Rpc.GetBalance(ctx, account.Address)
 	if err != nil {
 		return nil, err
 	}
 	var balances []*RosettaTypes.Amount
 	nativeBalance := &RosettaTypes.Amount{
-		Value: fmt.Sprint(bal.Value),
+		Value: fmt.Sprint(bal),
 		Currency: &RosettaTypes.Currency{
 			Symbol:   Symbol,
 			Decimals: Decimals,
@@ -308,13 +144,13 @@ func (ec *Client) Balance(
 		Metadata: nil,
 	}
 
-	tokenAccs, err := ec.TokenAccounts(account.Address)
+	tokenAccs, err := ec.Rpc.GetTokenAccountsByOwner(ctx, account.Address)
 
 	if err == nil {
-		for _, tokenAcc := range tokenAccs.Value {
+		for _, tokenAcc := range tokenAccs {
 			symbol := tokenAcc.Account.Data.Parsed.Info.Mint
 			b := &RosettaTypes.Amount{
-				Value: fmt.Sprint(bal.Value),
+				Value: fmt.Sprint(bal),
 				Currency: &RosettaTypes.Currency{
 					Symbol:   symbol,
 					Decimals: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Decimals,
@@ -328,8 +164,7 @@ func (ec *Client) Balance(
 	if len(symbols) == 0 || Contains(symbols, Symbol) {
 		balances = append(balances, nativeBalance)
 	}
-	slot, err := ec.GetSlot(client.CommitmentFinalized)
-	//slotTime, err := ec.GetBlockTime();
+	slot, err := ec.Rpc.GetSlot(ctx)
 
 	return &RosettaTypes.AccountBalanceResponse{
 
@@ -347,14 +182,14 @@ func (ec *Client) Call(
 	ctx context.Context,
 	request *RosettaTypes.CallRequest,
 ) (*RosettaTypes.CallResponse, error) {
-
-	var out interface{}
-	var err error
+	var x []interface{}
 	if p, ok := request.Parameters["param"]; ok {
-		err = ec.rpc.CallFor(&out, request.Method, p)
+		x = []interface{}{p}
 	} else {
-		err = ec.rpc.CallFor(&out, request.Method)
+		x = []interface{}{}
 	}
+
+	out, err := ec.Rpc.CallRequest(ctx, request.Method, x)
 
 	if err != nil {
 		return nil, fmt.Errorf("rpc call error")

@@ -118,17 +118,6 @@ var (
 		Message: "Call method invalid",
 	}
 
-	// ErrBlockOrphaned is returned when a block being
-	// processed is orphaned and it is not possible
-	// to gather all receipts. At some point in the future,
-	// it may become possible to gather all receipts if the
-	// block becomes part of the canonical chain again.
-	ErrBlockOrphaned = &types.Error{
-		Code:      11, //nolint
-		Message:   "Block orphaned",
-		Retriable: true,
-	}
-
 	// ErrInvalidAddress is returned when an address
 	// is not valid.
 	ErrInvalidAddress = &types.Error{

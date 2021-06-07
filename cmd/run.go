@@ -84,21 +84,12 @@ func runRunCmd(cmd *cobra.Command, args []string) error {
 
 	var client *solanago.Client
 	if cfg.Mode == configuration.Online {
-		//TODO: Start solana client
-		/*
-			if !cfg.RemoteGeth {
-				g.Go(func() error {
-					return solanago.StartGeth(ctx, cfg.GethArguments, g)
-				})
-			}*/
-
 		var err error
 		client, err = solanago.NewClient(cfg.GethURL)
 		if err != nil {
 			return fmt.Errorf("%w: cannot initialize solana client", err)
 		}
 		defer client.Close()
-
 	}
 
 	router := services.NewBlockchainRouter(cfg, client, asserter)

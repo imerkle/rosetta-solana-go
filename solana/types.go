@@ -19,7 +19,6 @@ import (
 	bin "github.com/dfuse-io/binary"
 	"github.com/dfuse-io/solana-go"
 	dfuserpc "github.com/dfuse-io/solana-go/rpc"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
@@ -35,7 +34,11 @@ const (
 
 	// TestnetNetwork is the value of the network
 	// in TestnetNetworkIdentifier.
-	TestnetNetwork string = "devnet"
+	TestnetNetwork string = "testnet"
+
+	// DevnetNetwork is the value of the network
+	// in DevnetNetworkIdentifier.
+	DevnetNetwork string = "devnet"
 
 	// Symbol is the symbol value
 	// used in Currency.
@@ -61,7 +64,12 @@ const (
 	// genesis block.
 	GenesisBlockIndex = int64(0)
 
-	Separator = "__"
+	Separator    = "__"
+	WithNonceKey = "with_nonce"
+
+	MainnetGenesisHash = "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+	TestnetGenesisHash = "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY"
+	DevnetGenesisHash  = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"
 )
 
 //op types
@@ -76,14 +84,20 @@ var (
 	// MainnetGenesisBlockIdentifier is the *types.BlockIdentifier
 	// of the mainnet genesis block.
 	MainnetGenesisBlockIdentifier = &types.BlockIdentifier{
-		Hash:  params.MainnetGenesisHash.Hex(),
+		Hash:  MainnetGenesisHash,
 		Index: GenesisBlockIndex,
 	}
 
 	// TestnetGenesisBlockIdentifier is the *types.BlockIdentifier
 	// of the testnet genesis block.
 	TestnetGenesisBlockIdentifier = &types.BlockIdentifier{
-		Hash:  params.RopstenGenesisHash.Hex(),
+		Hash:  TestnetGenesisHash,
+		Index: GenesisBlockIndex,
+	}
+	// TestnetGenesisBlockIdentifier is the *types.BlockIdentifier
+	// of the testnet genesis block.
+	DevnetGenesisHashBlockIdentifier = &types.BlockIdentifier{
+		Hash:  DevnetGenesisHash,
 		Index: GenesisBlockIndex,
 	}
 
@@ -130,21 +144,21 @@ type TokenParsed struct {
 }
 
 type ParsedInstructionMeta struct {
-	Authority    string            `json:authority,omitempty`
-	NewAuthority string            `json:newAuthority,omitempty`
-	Source       string            `json:source,omitempty`
-	Destination  string            `json:destination,omitempty`
-	Mint         string            `json:mint,omitempty`
-	Decimals     uint8             `json:decimals,omitempty`
-	TokenAmount  OpMetaTokenAmount `json:tokenAmount,omitempty`
-	Amount       string            `json:amount,omitempty`
-	Lamports     uint64            `json:lamports,omitempty`
-	Space        uint64            `json:space,omitempty`
+	Authority    string            `json:"authority,omitempty"`
+	NewAuthority string            `json:"newAuthority,omitempty"`
+	Source       string            `json:"source,omitempty"`
+	Destination  string            `json:"destination,omitempty"`
+	Mint         string            `json:"mint,omitempty"`
+	Decimals     uint8             `json:"decimals,omitempty"`
+	TokenAmount  OpMetaTokenAmount `json:"tokenAmount,omitempty"`
+	Amount       string            `json:"amount,omitempty"`
+	Lamports     uint64            `json:"lamports,omitempty"`
+	Space        uint64            `json:"space,omitempty"`
 }
 type OpMetaTokenAmount struct {
-	Amount   string  `json:amount,omitempty`
-	Decimals uint64  `json:decimals,omitempty`
-	UiAmount float64 `json:uiAmount,omitempty`
+	Amount   string  `json:"amount,omitempty"`
+	Decimals uint64  `json:"decimals,omitempty"`
+	UiAmount float64 `json:"uiAmount,omitempty"`
 }
 
 type GetConfirmedBlockResult struct {
@@ -154,4 +168,9 @@ type GetConfirmedBlockResult struct {
 	Transactions      []dfuserpc.TransactionParsed `json:"transactions"`
 	Rewards           []dfuserpc.BlockReward       `json:"rewards"`
 	BlockTime         bin.Uint64                   `json:"blockTime,omitempty"`
+}
+
+type WithNonce struct {
+	Account   string `json:"account"`
+	Authority string `json:"authority,omitempty"`
 }
