@@ -18,14 +18,14 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/imerkle/rosetta-solana-go/configuration"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
+	"github.com/imerkle/rosetta-solana-go/solana/operations"
 	"github.com/mr-tron/base58"
 	ss "github.com/portto/solana-go-sdk/client"
 	"github.com/portto/solana-go-sdk/common"
-	"github.com/portto/solana-go-sdk/sysprog"
-	"github.com/portto/solana-go-sdk/tokenprog"
 	solPTypes "github.com/portto/solana-go-sdk/types"
 
 	"github.com/coinbase/rosetta-sdk-go/parser"
@@ -120,11 +120,14 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
 	var instructions []solPTypes.Instruction
-	var signers []string
 
-	for i := 0; i < len(request.Operations); i += 2 {
+	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
+	for i := 0; i < len(request.Operations); i++ {
 		op := request.Operations[i]
 
+		if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
+			continue
+		}
 		descriptions := &parser.Descriptions{
 			OperationDescriptions: []*parser.OperationDescription{
 				{
@@ -153,37 +156,36 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			ErrUnmatched: true,
 		}
 		matches, err := parser.MatchOperations(descriptions, request.Operations)
+		tmpOP := op
+		if err == nil {
+			fromOp, _ := matches[0].First()
+			fromAdd := fromOp.Account.Address
+			toOp, _ := matches[1].First()
+			toAdd := toOp.Account.Address
 
-		if err != nil {
-			return nil, wrapErr(ErrUnclearIntent, err)
+			tmpOP.Account = fromOp.Account
+			tmpOP.Metadata["source"] = fromAdd
+			tmpOP.Metadata["destination"] = toAdd
+			tmpOP.Amount = toOp.Amount
+
+			matchedOperationHashMap[fromOp.OperationIdentifier.Index] = true
+			matchedOperationHashMap[toOp.OperationIdentifier.Index] = true
 		}
-
-		fromOp, _ := matches[0].First()
-		fromAdd := fromOp.Account.Address
-		toOp, _ := matches[1].First()
-		toAdd := toOp.Account.Address
-
-		var ins solPTypes.Instruction
-
-		switch fromOp.Type {
-		case solanago.System__Transfer:
-			amt, _ := strconv.ParseInt(toOp.Amount.Value, 10, 64)
-			ins = sysprog.Transfer(common.PublicKeyFromString(fromAdd), common.PublicKeyFromString(toAdd), uint64(amt))
-			if !solanago.Contains(signers, fromAdd) {
-				signers = append(signers, fromAdd)
-			}
+		switch strings.Split(tmpOP.Type, solanago.Separator)[0] {
+		case "System":
+			s := operations.SystemOperationMetadata{}
+			s.SetMeta(tmpOP)
+			instructions = s.ToInstructions(tmpOP.Type)
+		case "SplToken":
+			s := operations.SplTokenOperationMetadata{}
+			s.SetMeta(tmpOP)
+			instructions = s.ToInstructions(tmpOP.Type)
 			break
-		case solanago.SplToken__Transfer:
-			authority := fromOp.Metadata["authority"].(string)
-			amt, _ := strconv.ParseInt(toOp.Amount.Value, 10, 64)
-			if !solanago.Contains(signers, authority) {
-				signers = append(signers, authority)
-			}
-			ins = tokenprog.Transfer(common.PublicKeyFromString(fromAdd), common.PublicKeyFromString(toAdd), common.PublicKeyFromString(authority), []common.PublicKey{common.PublicKeyFromString(authority)}, uint64(amt))
-			break
+		default:
+			return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 		}
-		instructions = append(instructions, ins)
 	}
+	signers := solPTypes.GetUniqueSigners(instructions)
 	feePayer := common.PublicKeyFromString(signers[0])
 	// Convert map to Metadata struct
 	var meta ConstructionMetadata
@@ -267,7 +269,7 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
 
-	tx, err := GetTxFromStr(request.UnsignedTransaction)
+	tx, err := solanago.GetTxFromStr(request.UnsignedTransaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -298,29 +300,17 @@ func (s *ConstructionAPIService) ConstructionHash(
 	request *types.ConstructionHashRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
 
-	tx, err := GetTxFromStr(request.SignedTransaction)
+	tx, err := solanago.GetTxFromStr(request.SignedTransaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
-	hash := base58.Encode(tx.Signatures[0])
+	hash := tx.Signatures[0].ToBase58()
 
 	return &types.TransactionIdentifierResponse{
 		TransactionIdentifier: &types.TransactionIdentifier{
 			Hash: hash,
 		},
 	}, nil
-}
-func GetTxFromStr(t string) (solPTypes.Transaction, error) {
-	signedTx, err := base58.Decode(t)
-	if err != nil {
-		return solPTypes.Transaction{}, err
-	}
-
-	tx, err := solPTypes.TransactionDeserialize(signedTx)
-	if err != nil {
-		return solPTypes.Transaction{}, err
-	}
-	return tx, nil
 }
 
 // ConstructionParse implements the /construction/parse endpoint.
@@ -329,23 +319,27 @@ func (s *ConstructionAPIService) ConstructionParse(
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
 
-	tx, err := GetTxFromStr(request.Transaction)
+	tx, err := solanago.GetTxFromStr(request.Transaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
 	var signers []*types.AccountIdentifier
-	if !request.Signed {
-		//TODO: list
-		signers = []*types.AccountIdentifier{{
-			Address: tx.Message.Accounts[0].ToBase58(),
-		},
-		}
+	sgns := tx.Message.GetUniqueSigners()
+	for _, v := range sgns {
+		signers = append(signers, &types.AccountIdentifier{
+			Address: v,
+		})
 	}
-	//solanago.GetRosOperationsFromTx(tx)
+	parsedTx, err := solanago.ToParsedTransaction(tx)
+	if err != nil {
+		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
+	}
+
+	operations := solanago.GetRosOperationsFromTx(parsedTx, "")
 
 	resp := &types.ConstructionParseResponse{
-		Operations:               []*types.Operation{},
+		Operations:               operations,
 		AccountIdentifierSigners: signers,
 	}
 	return resp, nil

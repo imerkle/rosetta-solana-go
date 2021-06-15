@@ -1,7 +1,6 @@
 package solanago
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -10,9 +9,12 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	RosettaTypes "github.com/coinbase/rosetta-sdk-go/types"
-	"github.com/dfuse-io/solana-go"
+	"github.com/mr-tron/base58"
 	ss "github.com/portto/solana-go-sdk/client"
 	common "github.com/portto/solana-go-sdk/common"
+	"github.com/portto/solana-go-sdk/sysprog"
+	"github.com/portto/solana-go-sdk/tokenprog"
+	solPTypes "github.com/portto/solana-go-sdk/types"
 
 	"github.com/iancoleman/strcase"
 )
@@ -44,86 +46,9 @@ func getOperationType(s string) string {
 	return getOperationTypeWithProgram(x[0], x[1])
 }
 func split_at(at int, input []byte) ([]byte, []byte) {
-	return input[0:1], input[1:len(input)]
+	return input[0:1], input[1:]
 }
-func PublicKeyFromBytes(in []byte) (out solana.PublicKey) {
-	byteCount := len(in)
-	if byteCount == 0 {
-		return
-	}
-
-	max := 32
-	if byteCount < max {
-		max = byteCount
-	}
-
-	copy(out[:], in[0:max])
-	return
-}
-
-func parseInstruction(input []byte) TokenParsed {
-	tag, rest := split_at(0, input)
-	var amount []byte
-	var decimals []byte
-	var mintAuthority []byte
-	var freezeAuthority []byte
-	var authorityType []byte
-	var newAuthority []byte
-	var m byte
-	switch tag[0] {
-	case 0:
-		decimals, rest = split_at(0, rest)
-		mintAuthority, rest, _ = unpackPubkey(rest)
-		freezeAuthority, _, _ = unpackPubkeyOption(rest)
-		break
-	case 2:
-		m = rest[0]
-		break
-	case 3:
-	case 4:
-	case 7:
-	case 8:
-		amount = rest[0:8]
-		break
-	case 6:
-		authorityType, rest = split_at(0, rest)
-		newAuthority, _, _ = unpackPubkeyOption(rest)
-
-		break
-	}
-	return TokenParsed{
-		MintAutority:    PublicKeyFromBytes(mintAuthority),
-		FreezeAuthority: PublicKeyFromBytes(freezeAuthority),
-		AuthorityType:   PublicKeyFromBytes(authorityType),
-		NewAuthority:    PublicKeyFromBytes(newAuthority),
-		Decimals:        binary.BigEndian.Uint64(decimals),
-		Amount:          binary.LittleEndian.Uint64(amount),
-		M:               m,
-	}
-}
-
-func unpackPubkey(input []byte) ([]byte, []byte, error) {
-	if len(input) >= 32 {
-		key, rest := split_at(32, input)
-		return key, rest, nil
-	} else {
-		return nil, nil, fmt.Errorf("Invalid instruction")
-	}
-}
-
-func unpackPubkeyOption(input []byte) ([]byte, []byte, error) {
-	f, rest := split_at(0, input)
-	switch f[0] {
-	case 0:
-		return nil, rest, nil
-		break
-	case 1:
-		return unpackPubkey(rest)
-		break
-	}
-	return nil, nil, fmt.Errorf("Invalid instruction")
-}
-func GetRosOperationsFromTx(tx ss.ParsedTransaction, status string) []*types.Operation {
+func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*types.Operation {
 	//	hash := tx.Transaction.Signatures[0].String()
 	opIndex := int64(0)
 	var operations []*types.Operation
@@ -134,7 +59,7 @@ func GetRosOperationsFromTx(tx ss.ParsedTransaction, status string) []*types.Ope
 		}
 		opIndex += 1
 
-		if ins.Parsed != nil {
+		if ins.Parsed == nil {
 
 			var inInterface map[string]interface{}
 			inrec, _ := json.Marshal(ins)
@@ -232,18 +157,6 @@ func GetRosOperationsFromTx(tx ss.ParsedTransaction, status string) []*types.Ope
 	}
 	return operations
 }
-func programFromId(programId string) string {
-	program := "unknown"
-	switch programId {
-	case common.SystemProgramID.ToBase58():
-		program = "system"
-		break
-	case common.TokenProgramID.ToBase58():
-		program = "spl-token"
-		break
-	}
-	return program
-}
 
 func ToRosTxs(txs []ss.ParsedTransactionWithMeta) []*RosettaTypes.Transaction {
 	var rtxs []*RosettaTypes.Transaction
@@ -253,7 +166,7 @@ func ToRosTxs(txs []ss.ParsedTransactionWithMeta) []*RosettaTypes.Transaction {
 	}
 	return rtxs
 }
-func ToRosTx(tx ss.ParsedTransaction) RosettaTypes.Transaction {
+func ToRosTx(tx solPTypes.ParsedTransaction) RosettaTypes.Transaction {
 	return RosettaTypes.Transaction{
 		TransactionIdentifier: &RosettaTypes.TransactionIdentifier{
 			Hash: tx.Signatures[0],
@@ -293,4 +206,76 @@ func GetWithNonce(m map[string]interface{}) (WithNonce, bool) {
 		hasNonce = true
 	}
 	return withNonce, hasNonce
+}
+func GetTxFromStr(t string) (solPTypes.Transaction, error) {
+	signedTx, err := base58.Decode(t)
+	if err != nil {
+		return solPTypes.Transaction{}, err
+	}
+
+	tx, err := solPTypes.TransactionDeserialize(signedTx)
+	if err != nil {
+		return solPTypes.Transaction{}, err
+	}
+
+	return tx, nil
+}
+func ToParsedTransaction(tx solPTypes.Transaction) (solPTypes.ParsedTransaction, error) {
+	ins := tx.Message.DecompileInstructions()
+	var parsedIns []solPTypes.ParsedInstruction
+	for _, v := range ins {
+		p, err := ParseInstruction(v)
+		if err != nil {
+			//cannot parse
+			p = solPTypes.ParsedInstruction{}
+			return solPTypes.ParsedTransaction{}, fmt.Errorf("Cannot parse Instruction")
+		}
+		parsedIns = append(parsedIns, p)
+	}
+	var acckeys []string
+	var sigs []string
+	for _, v := range tx.Message.Accounts {
+		acckeys = append(acckeys, v.ToBase58())
+	}
+	for _, v := range tx.Signatures {
+		sigs = append(sigs, v.ToBase58())
+	}
+	newTx := solPTypes.ParsedTransaction{
+		Signatures: sigs,
+		Message: solPTypes.ParsedMessage{
+			Header:          tx.Message.Header,
+			AccountKeys:     acckeys,
+			RecentBlockhash: tx.Message.RecentBlockHash,
+			Instructions:    parsedIns,
+		},
+	}
+	return newTx, nil
+}
+func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, error) {
+	var parsedInstruction solPTypes.ParsedInstruction
+	var err error
+
+	switch ins.ProgramID {
+	case common.SystemProgramID:
+		parsedInstruction, err = sysprog.ParseSystem(ins)
+		break
+	case common.TokenProgramID:
+		parsedInstruction, err = tokenprog.ParseToken(ins)
+		break
+	default:
+		return parsedInstruction, fmt.Errorf("Cannot parse instruction")
+	}
+	if err != nil {
+		return parsedInstruction, err
+	}
+	var accs []string
+	for _, v := range ins.Accounts {
+		accs = append(accs, v.PubKey.ToBase58())
+	}
+	parsedInstruction.Accounts = accs
+	parsedInstruction.Data = base58.Encode(ins.Data[:])
+	parsedInstruction.ProgramID = ins.ProgramID.ToBase58()
+	parsedInstruction.Program = common.GetProgramName(ins.ProgramID)
+
+	return parsedInstruction, nil
 }

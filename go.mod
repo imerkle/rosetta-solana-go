@@ -7,6 +7,7 @@ require (
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70 // indirect
 	github.com/dfuse-io/solana-go v0.2.0
 	github.com/fatih/color v1.10.0
+	github.com/ghostiam/binstruct v1.0.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/iancoleman/strcase v0.1.3
 	github.com/mr-tron/base58 v1.2.0
@@ -14,6 +15,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
+	github.com/test-go/testify v1.1.4
 	github.com/tidwall/gjson v1.7.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

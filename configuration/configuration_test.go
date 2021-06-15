@@ -21,6 +21,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
+	ss "github.com/portto/solana-go-sdk/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				GenesisBlockIdentifier: solanago.MainnetGenesisBlockIdentifier,
 				Port:                   1000,
-				GethURL:                DefaultGethURL,
+				GethURL:                ss.MainnetRPCEndpoint,
 			},
 		},
 		"all set (mainnet) + geth": {
@@ -90,7 +91,7 @@ func TestLoadConfiguration(t *testing.T) {
 				},
 				GenesisBlockIdentifier: solanago.TestnetGenesisBlockIdentifier,
 				Port:                   1000,
-				GethURL:                DefaultGethURL,
+				GethURL:                ss.TestnetRPCEndpoint,
 			},
 		},
 		"invalid mode": {

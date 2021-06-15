@@ -75,9 +75,27 @@ const (
 //op types
 
 const (
-	System__Transfer   = "System__Transfer"
-	SplToken__Transfer = "SplToken__Transfer"
-	Unknown            = "Unknown"
+	System__Transfer            = "System__Transfer"
+	System__CreateAccount       = "System__CreateAccount"
+	System__Assign              = "System__Assign"
+	System__CreateNonceAccount  = "System__CreateNonceAccount"
+	System__AdvanceNonce        = "System__AdvanceNonce"
+	System__WithdrawFromNonce   = "System__WithdrawFromNonce"
+	System__AuthorizeNonce      = "System__AuthorizeNonce"
+	System__Allocate            = "System__Allocate"
+	SplToken__Transfer          = "SplToken__Transfer"
+	SplToken__InitializeMint    = "SplToken__InitializeMint"
+	SplToken__InitializeAccount = "SplToken__InitializeAccount"
+	SplToken__CreateToken       = "SplToken__CreateToken"
+	SplToken__CreateAccount     = "SplToken__CreateAccount"
+	SplToken__Approve           = "SplToken__Approve"
+	SplToken__Revoke            = "SplToken__Revoke"
+	SplToken_MintTo             = "SplToken_MintTo"
+	SplToken_Burn               = "SplToken_Burn"
+	SplToken_CloseAccount       = "SplToken_CloseAccount"
+	SplToken_FreezeAccount      = "SplToken_FreezeAccount"
+	SplToken__TransferChecked   = "SplToken__TransferChecked"
+	Unknown                     = "Unknown"
 )
 
 var (
@@ -111,7 +129,25 @@ var (
 	// OperationTypes are all suppoorted operation types.
 	OperationTypes = []string{
 		System__Transfer,
+		System__CreateAccount,
+		System__Assign,
+		System__CreateNonceAccount,
+		System__AdvanceNonce,
+		System__WithdrawFromNonce,
+		System__AuthorizeNonce,
+		System__Allocate,
 		SplToken__Transfer,
+		SplToken__InitializeMint,
+		SplToken__InitializeAccount,
+		SplToken__CreateToken,
+		SplToken__CreateAccount,
+		SplToken__Approve,
+		SplToken__Revoke,
+		SplToken_MintTo,
+		SplToken_Burn,
+		SplToken_CloseAccount,
+		SplToken_FreezeAccount,
+		SplToken__TransferChecked,
 		Unknown,
 	}
 
