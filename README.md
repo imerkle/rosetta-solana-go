@@ -66,12 +66,9 @@ and run one of the following commands:
     /construction/payloads (construction_payloads)
     /construction/preprocess (construction_preprocess)
     /construction/submit (construction_submit)
+    /construction/parse (construction_parse)
     /call (call)
         
-```
-### Endpoints Yet to be Implemented
-```
-    /construction/parse (construction_parse)
 ```
 #### Environment variables
 ```
@@ -86,10 +83,27 @@ See `types::OperationType` to see full list of current operations supported . Th
 
 ```
  
-    System__Transfer,
-    SplToken__Transfer,
-
-    Unknown,
+		System__Transfer,
+		System__CreateAccount,
+		System__Assign,
+		System__CreateNonceAccount,
+		System__AdvanceNonce,
+		System__WithdrawFromNonce,
+		System__AuthorizeNonce,
+		System__Allocate,
+		SplToken__Transfer,
+		SplToken__InitializeMint,
+		SplToken__InitializeAccount,
+		SplToken__CreateToken,
+		SplToken__CreateAccount,
+		SplToken__Approve,
+		SplToken__Revoke,
+		SplToken_MintTo,
+		SplToken_Burn,
+		SplToken_CloseAccount,
+		SplToken_FreezeAccount,
+		SplToken__TransferChecked,
+		Unknown,
 ```
 See https://github.com/imerkle/rosetta-solana-go/blob/master/USAGE.md for examples of request body for every operations
 ## TODO
@@ -99,8 +113,6 @@ See https://github.com/imerkle/rosetta-solana-go/blob/master/USAGE.md for exampl
 
 ## NOTE
 This is a go port of https://github.com/imerkle/rosetta-solana originally written in rust.
-
-Rust implementation is more advanced and feature complete and uses it's own matcher optimized for solana blockchain. This currently uses coinbase's matcher therefore limited to simpler operations. 
 
 ## License
 This project is available open source under the terms of the [Apache 2.0 License](https://opensource.org/licenses/Apache-2.0).
