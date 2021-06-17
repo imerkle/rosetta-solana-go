@@ -157,12 +157,14 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 		}
 		matches, err := parser.MatchOperations(descriptions, request.Operations)
 		tmpOP := op
+		if tmpOP.Metadata == nil {
+			tmpOP.Metadata = make(map[string]interface{})
+		}
 		if err == nil {
 			fromOp, _ := matches[0].First()
 			fromAdd := fromOp.Account.Address
 			toOp, _ := matches[1].First()
 			toAdd := toOp.Account.Address
-
 			tmpOP.Account = fromOp.Account
 			tmpOP.Metadata["source"] = fromAdd
 			tmpOP.Metadata["destination"] = toAdd

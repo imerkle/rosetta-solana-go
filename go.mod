@@ -7,7 +7,6 @@ require (
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70 // indirect
 	github.com/dfuse-io/solana-go v0.2.0
 	github.com/fatih/color v1.10.0
-	github.com/ghostiam/binstruct v1.0.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/iancoleman/strcase v0.1.3
 	github.com/mr-tron/base58 v1.2.0
@@ -27,6 +26,6 @@ require (
 
 go 1.15
 
-replace github.com/portto/solana-go-sdk => github.com/imerkle/solana-go-sdk v0.0.1
+replace github.com/portto/solana-go-sdk => github.com/imerkle/solana-go-sdk v0.0.2
 
 //replace github.com/portto/solana-go-sdk => ../solana-go-sdk
