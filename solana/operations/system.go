@@ -25,7 +25,7 @@ func (x *SystemOperationMetadata) SetMeta(op *types.Operation) {
 	if x.Lamports == 0 {
 		var amount uint64
 		amt, err := strconv.ParseInt(op.Amount.Value, 10, 64)
-		if err != nil {
+		if err == nil {
 			amount = uint64(amt)
 		}
 		x.Lamports = amount
