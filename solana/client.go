@@ -150,7 +150,7 @@ func (ec *Client) Balance(
 		for _, tokenAcc := range tokenAccs {
 			symbol := tokenAcc.Account.Data.Parsed.Info.Mint
 			b := &RosettaTypes.Amount{
-				Value: fmt.Sprint(bal),
+				Value: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Amount,
 				Currency: &RosettaTypes.Currency{
 					Symbol:   symbol,
 					Decimals: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Decimals,
