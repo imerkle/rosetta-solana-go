@@ -26,6 +26,6 @@ require (
 
 go 1.15
 
-replace github.com/portto/solana-go-sdk => github.com/imerkle/solana-go-sdk v0.0.2
+replace github.com/portto/solana-go-sdk => github.com/songchenwen/solana-go-sdk v0.0.3
 
 //replace github.com/portto/solana-go-sdk => ../solana-go-sdk
