@@ -203,7 +203,9 @@ func GetWithNonce(m map[string]interface{}) (WithNonce, bool) {
 	if w, ok := m[WithNonceKey]; ok {
 		j, _ := json.Marshal(w)
 		json.Unmarshal(j, &withNonce)
-		hasNonce = true
+		if len(withNonce.Account) > 0 {
+			hasNonce = true
+		}
 	}
 	return withNonce, hasNonce
 }
@@ -278,4 +280,12 @@ func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, e
 	parsedInstruction.Program = common.GetProgramName(ins.ProgramID)
 
 	return parsedInstruction, nil
+}
+func ValueToBaseAmount(valueStr string) uint64 {
+	var amount uint64
+	amt, err := strconv.ParseInt(valueStr, 10, 64)
+	if err == nil {
+		amount = uint64(amt)
+	}
+	return amount
 }

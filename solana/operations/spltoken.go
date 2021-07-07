@@ -2,7 +2,6 @@ package operations
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
@@ -26,12 +25,7 @@ type SplTokenOperationMetadata struct {
 func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	jsonString, _ := json.Marshal(op.Metadata)
 	if x.Amount == 0 {
-		var amount uint64
-		amt, err := strconv.ParseInt(op.Amount.Value, 10, 64)
-		if err != nil {
-			amount = uint64(amt)
-		}
-		x.Amount = amount
+		x.Amount = solanago.ValueToBaseAmount(op.Amount.Value)
 	}
 	if x.Source == "" {
 		x.Source = op.Account.Address
@@ -41,6 +35,7 @@ func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	}
 	json.Unmarshal(jsonString, &x)
 }
+
 func (x *SplTokenOperationMetadata) ToInstructions(opType string) []solPTypes.Instruction {
 	var ins []solPTypes.Instruction
 	switch opType {
