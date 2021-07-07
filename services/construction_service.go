@@ -17,6 +17,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -124,9 +125,16 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
 	for i := 0; i < len(request.Operations); i++ {
 		op := request.Operations[i]
-
 		if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
 			continue
+		}
+
+		var metaDescr []*parser.MetadataDescription
+		for k, v := range op.Metadata {
+			metaDescr = append(metaDescr, &parser.MetadataDescription{
+				Key:       k,
+				ValueKind: reflect.TypeOf(v).Kind(),
+			})
 		}
 		descriptions := &parser.Descriptions{
 			OperationDescriptions: []*parser.OperationDescription{
@@ -140,6 +148,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 						Sign:   parser.NegativeAmountSign,
 						//Currency: solanago.Currency,
 					},
+					Metadata: metaDescr,
 				},
 				{
 					Type: op.Type,
@@ -151,6 +160,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 						Sign:   parser.PositiveAmountSign,
 						//Currency: solanago.Currency,
 					},
+					Metadata: metaDescr,
 				},
 			},
 			ErrUnmatched: true,
