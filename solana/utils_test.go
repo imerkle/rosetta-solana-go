@@ -9,7 +9,7 @@ import (
 // TestHelloName calls greetings.Hello with a name, checking
 // for a valid return value.
 func TestValueToBaseAmount(t *testing.T) {
-	amt := ValueToBaseAmount("1")
+	amt := ValueToBaseAmount("-1")
 	assert.Equal(t, uint64(1), amt)
 }
 func TestTxParse(t *testing.T) {

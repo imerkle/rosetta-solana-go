@@ -17,7 +17,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -29,7 +28,6 @@ import (
 	"github.com/portto/solana-go-sdk/common"
 	solPTypes "github.com/portto/solana-go-sdk/types"
 
-	"github.com/coinbase/rosetta-sdk-go/parser"
 	"github.com/coinbase/rosetta-sdk-go/types"
 )
 
@@ -128,52 +126,37 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 		if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
 			continue
 		}
+		var matched *types.Operation = nil
+		for _, v := range request.Operations {
+			if _, ok := matchedOperationHashMap[v.OperationIdentifier.Index]; ok {
+				continue
+			}
+			if v.Type != op.Type {
+				continue
+			}
+			if v.Amount.Currency.Symbol != op.Amount.Currency.Symbol {
+				continue
+			}
+			if solanago.ValueToBaseAmount(v.Amount.Value) != solanago.ValueToBaseAmount(op.Amount.Value) {
+				continue
+			} else {
+				opisNegative := strings.Contains(op.Amount.Value, "-")
+				visNegative := strings.Contains(v.Amount.Value, "-")
+				if (opisNegative && visNegative) || (!opisNegative && !visNegative) {
+					continue
+				}
+			}
+			matched = v
+		}
 
-		var metaDescr []*parser.MetadataDescription
-		for k, v := range op.Metadata {
-			metaDescr = append(metaDescr, &parser.MetadataDescription{
-				Key:       k,
-				ValueKind: reflect.TypeOf(v).Kind(),
-			})
-		}
-		descriptions := &parser.Descriptions{
-			OperationDescriptions: []*parser.OperationDescription{
-				{
-					Type: op.Type,
-					Account: &parser.AccountDescription{
-						Exists: true,
-					},
-					Amount: &parser.AmountDescription{
-						Exists: true,
-						Sign:   parser.NegativeAmountSign,
-						//Currency: solanago.Currency,
-					},
-					Metadata: metaDescr,
-				},
-				{
-					Type: op.Type,
-					Account: &parser.AccountDescription{
-						Exists: true,
-					},
-					Amount: &parser.AmountDescription{
-						Exists: true,
-						Sign:   parser.PositiveAmountSign,
-						//Currency: solanago.Currency,
-					},
-					Metadata: metaDescr,
-				},
-			},
-			ErrUnmatched: true,
-		}
-		matches, err := parser.MatchOperations(descriptions, request.Operations)
 		tmpOP := op
 		if tmpOP.Metadata == nil {
 			tmpOP.Metadata = make(map[string]interface{})
 		}
-		if err == nil {
-			fromOp, _ := matches[0].First()
+		if matched != nil {
+			fromOp := op
 			fromAdd := fromOp.Account.Address
-			toOp, _ := matches[1].First()
+			toOp := matched
 			toAdd := toOp.Account.Address
 			tmpOP.Account = fromOp.Account
 			tmpOP.Metadata["source"] = fromAdd
@@ -182,19 +165,22 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 
 			matchedOperationHashMap[fromOp.OperationIdentifier.Index] = true
 			matchedOperationHashMap[toOp.OperationIdentifier.Index] = true
+		} else {
+			matchedOperationHashMap[op.OperationIdentifier.Index] = true
 		}
 		switch strings.Split(tmpOP.Type, solanago.Separator)[0] {
 		case "System":
 			s := operations.SystemOperationMetadata{}
 			s.SetMeta(tmpOP)
-			instructions = s.ToInstructions(tmpOP.Type)
+			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
+			break
 		case "SplToken":
 			s := operations.SplTokenOperationMetadata{}
 			s.SetMeta(tmpOP)
-			instructions = s.ToInstructions(tmpOP.Type)
+			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
 			break
 		default:
-			return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
+			return nil, wrapErr(ErrUnableToParseIntermediateResult, fmt.Errorf("Operation not implemented for construction"))
 		}
 	}
 	signers := solPTypes.GetUniqueSigners(instructions)

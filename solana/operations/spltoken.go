@@ -33,6 +33,12 @@ func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	if x.Authority == "" {
 		x.Authority = x.Source
 	}
+	if x.Mint == "" {
+		x.Mint = op.Amount.Currency.Symbol
+	}
+	if x.Decimals == 0 {
+		x.Decimals = uint8(op.Amount.Currency.Decimals)
+	}
 	json.Unmarshal(jsonString, &x)
 }
 

@@ -53,7 +53,6 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 	opIndex := int64(0)
 	var operations []*types.Operation
 	for _, ins := range tx.Message.Instructions {
-
 		oi := types.OperationIdentifier{
 			Index: opIndex,
 		}
@@ -88,26 +87,39 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 			json.Unmarshal(inrec, &inInterface)
 
 			if IsBalanceChanging(opType) {
-				if parsedInstructionMeta.Mint == "" {
-					parsedInstructionMeta.Mint = Symbol
-				}
 				if parsedInstructionMeta.Decimals == 0 {
 					parsedInstructionMeta.Decimals = Decimals
 				}
-				if parsedInstructionMeta.Amount == "" {
-					parsedInstructionMeta.Amount = strconv.FormatInt(int64(parsedInstructionMeta.Lamports), 10)
+				if parsedInstructionMeta.Amount == 0 {
+					if parsedInstructionMeta.Lamports == 0 {
+						parsedInstructionMeta.Amount, _ = strconv.ParseUint(parsedInstructionMeta.TokenAmount.Amount, 10, 64)
+					} else {
+						parsedInstructionMeta.Amount = parsedInstructionMeta.Lamports
+					}
 				}
-				currency := types.Currency{
-					Symbol:   parsedInstructionMeta.Mint,
-					Decimals: int32(parsedInstructionMeta.Decimals),
-					Metadata: map[string]interface{}{},
+				var currency types.Currency
+				if parsedInstructionMeta.Mint == "" {
+					if ins.Program == "system" {
+						currency = types.Currency{
+							Symbol:   Symbol,
+							Decimals: Decimals,
+							Metadata: map[string]interface{}{},
+						}
+					}
+				} else {
+					currency = types.Currency{
+						Symbol:   parsedInstructionMeta.Mint,
+						Decimals: int32(parsedInstructionMeta.Decimals),
+						Metadata: map[string]interface{}{},
+					}
 				}
+
 				sender := types.AccountIdentifier{
 					Address:  parsedInstructionMeta.Source,
 					Metadata: map[string]interface{}{},
 				}
 				senderAmt := types.Amount{
-					Value:    "-" + parsedInstructionMeta.Amount,
+					Value:    "-" + fmt.Sprint(parsedInstructionMeta.Amount),
 					Currency: &currency,
 				}
 				receiver := types.AccountIdentifier{
@@ -115,7 +127,7 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 					Metadata: map[string]interface{}{},
 				}
 				receiverAmt := types.Amount{
-					Value:    parsedInstructionMeta.Amount,
+					Value:    fmt.Sprint(parsedInstructionMeta.Amount),
 					Currency: &currency,
 				}
 				oi2 := types.OperationIdentifier{
@@ -283,6 +295,7 @@ func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, e
 }
 func ValueToBaseAmount(valueStr string) uint64 {
 	var amount uint64
+	valueStr = strings.Replace(valueStr, "-", "", -1)
 	amt, err := strconv.ParseInt(valueStr, 10, 64)
 	if err == nil {
 		amount = uint64(amt)

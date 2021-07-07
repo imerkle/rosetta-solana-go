@@ -187,7 +187,7 @@ type ParsedInstructionMeta struct {
 	Mint         string            `json:"mint,omitempty"`
 	Decimals     uint8             `json:"decimals,omitempty"`
 	TokenAmount  OpMetaTokenAmount `json:"tokenAmount,omitempty"`
-	Amount       string            `json:"amount,omitempty"`
+	Amount       uint64            `json:"amount,omitempty"`
 	Lamports     uint64            `json:"lamports,omitempty"`
 	Space        uint64            `json:"space,omitempty"`
 }
