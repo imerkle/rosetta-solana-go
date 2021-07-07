@@ -127,6 +127,9 @@ func LoadConfiguration() (*Configuration, error) {
 	default:
 		return nil, fmt.Errorf("%s is not a valid network", networkValue)
 	}
+	if config.Mode == Offline {
+		return config, nil
+	}
 	envGethURL := os.Getenv(GethEnv)
 	if len(envGethURL) > 0 {
 		config.RemoteGeth = true
