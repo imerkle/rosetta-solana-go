@@ -134,16 +134,18 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			if v.Type != op.Type {
 				continue
 			}
-			if v.Amount.Currency.Symbol != op.Amount.Currency.Symbol {
-				continue
-			}
-			if solanago.ValueToBaseAmount(v.Amount.Value) != solanago.ValueToBaseAmount(op.Amount.Value) {
-				continue
-			} else {
-				opisNegative := strings.Contains(op.Amount.Value, "-")
-				visNegative := strings.Contains(v.Amount.Value, "-")
-				if (opisNegative && visNegative) || (!opisNegative && !visNegative) {
+			if v.Amount != nil {
+				if v.Amount.Currency.Symbol != op.Amount.Currency.Symbol {
 					continue
+				}
+				if solanago.ValueToBaseAmount(v.Amount.Value) != solanago.ValueToBaseAmount(op.Amount.Value) {
+					continue
+				} else {
+					opisNegative := strings.Contains(op.Amount.Value, "-")
+					visNegative := strings.Contains(v.Amount.Value, "-")
+					if (opisNegative && visNegative) || (!opisNegative && !visNegative) {
+						continue
+					}
 				}
 			}
 			matched = v

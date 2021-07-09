@@ -5,6 +5,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
+	"github.com/portto/solana-go-sdk/assotokenprog"
 	"github.com/portto/solana-go-sdk/common"
 	"github.com/portto/solana-go-sdk/sysprog"
 	"github.com/portto/solana-go-sdk/tokenprog"
@@ -24,7 +25,7 @@ type SplTokenOperationMetadata struct {
 
 func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	jsonString, _ := json.Marshal(op.Metadata)
-	if x.Amount == 0 {
+	if op.Amount != nil && x.Amount == 0 {
 		x.Amount = solanago.ValueToBaseAmount(op.Amount.Value)
 	}
 	if x.Source == "" {
@@ -33,10 +34,10 @@ func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	if x.Authority == "" {
 		x.Authority = x.Source
 	}
-	if x.Mint == "" {
+	if op.Amount != nil && x.Mint == "" {
 		x.Mint = op.Amount.Currency.Symbol
 	}
-	if x.Decimals == 0 {
+	if op.Amount != nil && x.Decimals == 0 {
 		x.Decimals = uint8(op.Amount.Currency.Decimals)
 	}
 	json.Unmarshal(jsonString, &x)
@@ -85,7 +86,9 @@ func (x *SplTokenOperationMetadata) ToInstructions(opType string) []solPTypes.In
 	case solanago.SplToken__TransferChecked:
 		ins = append(ins, tokenprog.TransferChecked(p(x.Source), p(x.Destination), p(x.Mint), p(x.Authority), []common.PublicKey{}, x.Amount, x.Decimals))
 		break
-
+	case solanago.SplToken__CreateAssocTokenAcc:
+		ins = append(ins, assotokenprog.CreateAssociatedTokenAccount(p(x.Source), p(x.Destination), p(x.Mint)))
+		break
 	}
 	return ins
 }

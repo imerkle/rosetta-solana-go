@@ -56,6 +56,18 @@ func TestConstructionServiceSpl(t *testing.T) {
 	}
 	m1 := map[string]interface{}{}
 
+	/*
+		ops1 := []*types.Operation{&types.Operation{
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 0,
+			},
+			Type:    "SplToken__CreateAssocTokenAcc",
+			Account: from1,
+			Metadata: map[string]interface{}{
+				"destination": "42jb8c6XpQ6KXxJEHSWPeoFvyrhuiGvcCJQKumdtW78v",
+				"mint":        "GmrqGgTJ2mmNDvqaa39NAnzcwyXtm5ntTa41zPTHyc9o",
+			},
+		}}*/
 	ops := []*types.Operation{&types.Operation{
 		OperationIdentifier: &types.OperationIdentifier{
 			Index: 0,
@@ -141,15 +153,15 @@ func TestConstructionServiceSpl(t *testing.T) {
 			SignatureType: v.SignatureType,
 			Bytes:         ed25519.Sign(ed25519.NewKeyFromSeed(pk), v.Bytes),
 		})
-	}
-	parseRes, err := constructionAPIService.ConstructionParse(
-		ctx, &types.ConstructionParseRequest{
-			NetworkIdentifier: cfg.Network,
-			Transaction:       payRes.UnsignedTransaction,
-		},
-	)
-	//assert.Equal(t, ops, parseRes.Operations)
-	fmt.Println(len(parseRes.Operations))
+	} /*
+		parseRes, err := constructionAPIService.ConstructionParse(
+			ctx, &types.ConstructionParseRequest{
+				NetworkIdentifier: cfg.Network,
+				Transaction:       payRes.UnsignedTransaction,
+			},
+		)
+		//assert.Equal(t, ops, parseRes.Operations)
+		fmt.Println(len(parseRes.Operations))*/
 	combRes, err := constructionAPIService.ConstructionCombine(
 		ctx, &types.ConstructionCombineRequest{
 			NetworkIdentifier:   cfg.Network,
