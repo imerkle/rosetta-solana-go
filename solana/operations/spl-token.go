@@ -86,8 +86,11 @@ func (x *SplTokenOperationMetadata) ToInstructions(opType string) []solPTypes.In
 	case solanago.SplToken__TransferChecked:
 		ins = append(ins, tokenprog.TransferChecked(p(x.Source), p(x.Destination), p(x.Mint), p(x.Authority), []common.PublicKey{}, x.Amount, x.Decimals))
 		break
-	case solanago.SplToken__CreateAssocTokenAcc:
-		ins = append(ins, assotokenprog.CreateAssociatedTokenAccount(p(x.Source), p(x.Destination), p(x.Mint)))
+	case solanago.SplToken__TransferNew:
+		ins_create_assoc := assotokenprog.CreateAssociatedTokenAccount(p(x.Authority), p(x.Destination), p(x.Mint))
+		account := ins_create_assoc.Accounts[1].PubKey.ToBase58()
+		ins = append(ins, ins_create_assoc)
+		ins = append(ins, tokenprog.TransferChecked(p(x.Source), p(account), p(x.Mint), p(x.Authority), []common.PublicKey{}, x.Amount, x.Decimals))
 		break
 	}
 	return ins

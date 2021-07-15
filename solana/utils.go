@@ -10,6 +10,7 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	RosettaTypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/mr-tron/base58"
+	"github.com/portto/solana-go-sdk/assotokenprog"
 	ss "github.com/portto/solana-go-sdk/client"
 	common "github.com/portto/solana-go-sdk/common"
 	"github.com/portto/solana-go-sdk/sysprog"
@@ -72,6 +73,7 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 			})
 		} else {
 			opType := getOperationTypeWithProgram(ins.Program, ins.Parsed.InstructionType)
+
 			if !Contains(OperationTypes, opType) {
 				opType = "Unknown"
 			}
@@ -158,9 +160,16 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 					Metadata:            inInterface,
 				})
 			} else {
+				var account types.AccountIdentifier
+				if parsedInstructionMeta.Source != "" {
+					account = types.AccountIdentifier{
+						Address: parsedInstructionMeta.Source,
+					}
+				}
 				operations = append(operations, &types.Operation{
 					OperationIdentifier: &oi,
 					Type:                opType,
+					Account:             &account,
 					Status:              &status,
 					Metadata:            inInterface,
 				})
@@ -276,6 +285,9 @@ func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, e
 	case common.TokenProgramID:
 		parsedInstruction, err = tokenprog.ParseToken(ins)
 		break
+	case common.SPLAssociatedTokenAccountProgramID:
+		parsedInstruction, err = assotokenprog.ParseAssocToken(ins)
+		break
 	default:
 		return parsedInstruction, fmt.Errorf("Cannot parse instruction")
 	}
@@ -290,7 +302,6 @@ func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, e
 	parsedInstruction.Data = base58.Encode(ins.Data[:])
 	parsedInstruction.ProgramID = ins.ProgramID.ToBase58()
 	parsedInstruction.Program = common.GetProgramName(ins.ProgramID)
-
 	return parsedInstruction, nil
 }
 func ValueToBaseAmount(valueStr string) uint64 {

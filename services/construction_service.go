@@ -23,6 +23,7 @@ import (
 	"github.com/imerkle/rosetta-solana-go/configuration"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
 	"github.com/imerkle/rosetta-solana-go/solana/operations"
+	"github.com/mitchellh/copystructure"
 	"github.com/mr-tron/base58"
 	ss "github.com/portto/solana-go-sdk/client"
 	"github.com/portto/solana-go-sdk/common"
@@ -121,8 +122,9 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	var instructions []solPTypes.Instruction
 
 	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
-	for i := 0; i < len(request.Operations); i++ {
-		op := request.Operations[i]
+
+	for _, op := range request.Operations {
+
 		if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
 			continue
 		}
@@ -151,12 +153,23 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			matched = v
 		}
 
-		tmpOP := op
+		if matched == nil && op.Amount != nil {
+			return nil, wrapErr(ErrUnableToParseIntermediateResult, fmt.Errorf("Invalid Operation Request. Please check format"))
+		}
+
+		opCopy, err := copystructure.Copy(*op)
+		if err != nil {
+			return nil, wrapErr(ErrUnclearIntent, fmt.Errorf("Cannot deep copy operations"))
+
+		}
+		tp := opCopy.(types.Operation)
+		tmpOP := &tp
+
 		if tmpOP.Metadata == nil {
 			tmpOP.Metadata = make(map[string]interface{})
 		}
 		if matched != nil {
-			fromOp := op
+			fromOp := tmpOP
 			fromAdd := fromOp.Account.Address
 			toOp := matched
 			toAdd := toOp.Account.Address
@@ -178,6 +191,11 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			break
 		case "SplToken":
 			s := operations.SplTokenOperationMetadata{}
+			s.SetMeta(tmpOP)
+			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
+			break
+		case "SplAssociatedTokenAccount":
+			s := operations.SplAssociatedTokenAccountOperationMetadata{}
 			s.SetMeta(tmpOP)
 			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
 			break

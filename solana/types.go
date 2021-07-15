@@ -75,28 +75,29 @@ const (
 //op types
 
 const (
-	System__Transfer              = "System__Transfer"
-	System__CreateAccount         = "System__CreateAccount"
-	System__Assign                = "System__Assign"
-	System__CreateNonceAccount    = "System__CreateNonceAccount"
-	System__AdvanceNonce          = "System__AdvanceNonce"
-	System__WithdrawFromNonce     = "System__WithdrawFromNonce"
-	System__AuthorizeNonce        = "System__AuthorizeNonce"
-	System__Allocate              = "System__Allocate"
-	SplToken__Transfer            = "SplToken__Transfer"
-	SplToken__InitializeMint      = "SplToken__InitializeMint"
-	SplToken__InitializeAccount   = "SplToken__InitializeAccount"
-	SplToken__CreateToken         = "SplToken__CreateToken"
-	SplToken__CreateAccount       = "SplToken__CreateAccount"
-	SplToken__Approve             = "SplToken__Approve"
-	SplToken__Revoke              = "SplToken__Revoke"
-	SplToken_MintTo               = "SplToken_MintTo"
-	SplToken_Burn                 = "SplToken_Burn"
-	SplToken_CloseAccount         = "SplToken_CloseAccount"
-	SplToken_FreezeAccount        = "SplToken_FreezeAccount"
-	SplToken__TransferChecked     = "SplToken__TransferChecked"
-	SplToken__CreateAssocTokenAcc = "SplToken__CreateAssocTokenAcc"
-	Unknown                       = "Unknown"
+	System__Transfer                  = "System__Transfer"
+	System__CreateAccount             = "System__CreateAccount"
+	System__Assign                    = "System__Assign"
+	System__CreateNonceAccount        = "System__CreateNonceAccount"
+	System__AdvanceNonce              = "System__AdvanceNonce"
+	System__WithdrawFromNonce         = "System__WithdrawFromNonce"
+	System__AuthorizeNonce            = "System__AuthorizeNonce"
+	System__Allocate                  = "System__Allocate"
+	SplToken__Transfer                = "SplToken__Transfer"
+	SplToken__InitializeMint          = "SplToken__InitializeMint"
+	SplToken__InitializeAccount       = "SplToken__InitializeAccount"
+	SplToken__CreateToken             = "SplToken__CreateToken"
+	SplToken__CreateAccount           = "SplToken__CreateAccount"
+	SplToken__Approve                 = "SplToken__Approve"
+	SplToken__Revoke                  = "SplToken__Revoke"
+	SplToken_MintTo                   = "SplToken_MintTo"
+	SplToken_Burn                     = "SplToken_Burn"
+	SplToken_CloseAccount             = "SplToken_CloseAccount"
+	SplToken_FreezeAccount            = "SplToken_FreezeAccount"
+	SplToken__TransferChecked         = "SplToken__TransferChecked"
+	SplToken__TransferNew             = "SplToken__TransferNew"
+	SplAssociatedTokenAccount__Create = "SplAssociatedTokenAccount__Create"
+	Unknown                           = "Unknown"
 )
 
 var (
@@ -149,6 +150,8 @@ var (
 		SplToken_CloseAccount,
 		SplToken_FreezeAccount,
 		SplToken__TransferChecked,
+		SplToken__TransferNew,
+		SplAssociatedTokenAccount__Create,
 		Unknown,
 	}
 
