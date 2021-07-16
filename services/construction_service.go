@@ -69,9 +69,31 @@ func (s *ConstructionAPIService) ConstructionPreprocess(
 	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
 	withNonce, _ := solanago.GetWithNonce(request.Metadata)
+
+	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
+
+	var SplSystemAccMap map[int64]solanago.SplAccounts = make(map[int64]solanago.SplAccounts)
+	for _, op := range request.Operations {
+		var cont bool
+		var matched *types.Operation
+		cont, matched = FindMatch(request.Operations, op, matchedOperationHashMap)
+		if cont {
+			continue
+		}
+		if matched != nil && op.Type == solanago.SplToken__TransferWithSystem {
+			SplSystemAccMap[op.OperationIdentifier.Index] = solanago.SplAccounts{
+				Source:      op.Account.Address,
+				Destination: matched.Account.Address,
+				Mint:        op.Amount.Currency.Symbol,
+			}
+			matchedOperationHashMap[op.OperationIdentifier.Index] = true
+		}
+	}
+
 	return &types.ConstructionPreprocessResponse{
 		Options: map[string]interface{}{
-			solanago.WithNonceKey: withNonce,
+			solanago.WithNonceKey:       withNonce,
+			solanago.SplSystemAccMapKey: SplSystemAccMap,
 		},
 	}, nil
 }
@@ -98,9 +120,25 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 		hash = recentBlockhash.Blockhash
 		fee = recentBlockhash.FeeCalculator
 	}
+	var SplTokenAccMap map[int64]solanago.SplAccounts = make(map[int64]solanago.SplAccounts)
+	if w, ok := request.Options[solanago.SplSystemAccMapKey]; ok {
+
+		m := w.(map[int64]solanago.SplAccounts)
+		for k, v := range m {
+			source, _ := s.client.GetTokenAccountByMint(ctx, v.Source, v.Mint)
+			destination, _ := s.client.GetTokenAccountByMint(ctx, v.Destination, v.Mint)
+			SplTokenAccMap[k] = solanago.SplAccounts{
+				Source:      source,
+				Destination: destination,
+				Mint:        v.Mint,
+			}
+		}
+	}
+
 	meta, _ := marshalJSONMap(ConstructionMetadata{
-		BlockHash:     hash,
-		FeeCalculator: fee,
+		BlockHash:         hash,
+		FeeCalculator:     fee,
+		SplTokenAccMapKey: SplTokenAccMap,
 	})
 
 	return &types.ConstructionMetadataResponse{
@@ -113,6 +151,39 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 		},
 	}, nil
 }
+func FindMatch(ops []*types.Operation, op *types.Operation, matchedOperationHashMap map[int64]bool) (bool, *types.Operation) {
+	if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
+		return true, nil
+	}
+	var matched *types.Operation = nil
+	for _, v := range ops {
+		if op.OperationIdentifier.Index == v.OperationIdentifier.Index {
+			continue
+		}
+		if _, ok := matchedOperationHashMap[v.OperationIdentifier.Index]; ok {
+			continue
+		}
+		if v.Type != op.Type {
+			continue
+		}
+		if v.Amount != nil {
+			if v.Amount.Currency.Symbol != op.Amount.Currency.Symbol {
+				continue
+			}
+			if solanago.ValueToBaseAmount(v.Amount.Value) != solanago.ValueToBaseAmount(op.Amount.Value) {
+				continue
+			} else {
+				opisNegative := strings.Contains(op.Amount.Value, "-")
+				visNegative := strings.Contains(v.Amount.Value, "-")
+				if (opisNegative && visNegative) || (!opisNegative && !visNegative) {
+					continue
+				}
+			}
+		}
+		return false, v
+	}
+	return false, matched
+}
 
 // ConstructionPayloads implements the /construction/payloads endpoint.
 func (s *ConstructionAPIService) ConstructionPayloads(
@@ -121,36 +192,20 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
 	var instructions []solPTypes.Instruction
 
+	// Convert map to Metadata struct
+	var meta ConstructionMetadata
+
+	if err := unmarshalJSONMap(request.Metadata, &meta); err != nil {
+		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
+	}
+
 	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
-
 	for _, op := range request.Operations {
-
-		if _, ok := matchedOperationHashMap[op.OperationIdentifier.Index]; ok {
+		var cont bool
+		var matched *types.Operation
+		cont, matched = FindMatch(request.Operations, op, matchedOperationHashMap)
+		if cont {
 			continue
-		}
-		var matched *types.Operation = nil
-		for _, v := range request.Operations {
-			if _, ok := matchedOperationHashMap[v.OperationIdentifier.Index]; ok {
-				continue
-			}
-			if v.Type != op.Type {
-				continue
-			}
-			if v.Amount != nil {
-				if v.Amount.Currency.Symbol != op.Amount.Currency.Symbol {
-					continue
-				}
-				if solanago.ValueToBaseAmount(v.Amount.Value) != solanago.ValueToBaseAmount(op.Amount.Value) {
-					continue
-				} else {
-					opisNegative := strings.Contains(op.Amount.Value, "-")
-					visNegative := strings.Contains(v.Amount.Value, "-")
-					if (opisNegative && visNegative) || (!opisNegative && !visNegative) {
-						continue
-					}
-				}
-			}
-			matched = v
 		}
 
 		if matched == nil && op.Amount != nil {
@@ -180,6 +235,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 
 			matchedOperationHashMap[fromOp.OperationIdentifier.Index] = true
 			matchedOperationHashMap[toOp.OperationIdentifier.Index] = true
+
 		} else {
 			matchedOperationHashMap[op.OperationIdentifier.Index] = true
 		}
@@ -188,10 +244,11 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			s := operations.SystemOperationMetadata{}
 			s.SetMeta(tmpOP)
 			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
+
 			break
 		case "SplToken":
 			s := operations.SplTokenOperationMetadata{}
-			s.SetMeta(tmpOP)
+			s.SetMeta(tmpOP, meta.SplTokenAccMapKey)
 			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
 			break
 		case "SplAssociatedTokenAccount":
@@ -205,12 +262,6 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 	}
 	signers := solPTypes.GetUniqueSigners(instructions)
 	feePayer := common.PublicKeyFromString(signers[0])
-	// Convert map to Metadata struct
-	var meta ConstructionMetadata
-
-	if err := unmarshalJSONMap(request.Metadata, &meta); err != nil {
-		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
-	}
 	blockHash := meta.BlockHash
 	var message solPTypes.Message
 

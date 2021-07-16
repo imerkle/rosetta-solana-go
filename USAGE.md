@@ -1,4 +1,4 @@
-##### json request body for `construction/payloads`
+##### json request body for `construction/preprocess`
 
 #### NATIVE SOL Transfer `System__Transfer`
 ```
@@ -40,15 +40,56 @@
                 }
             }
         }
-    ],
-    "metadata": {
-        "blockhash": "42gAeAs9JE1bzqjGQtprYcdi5KyZAQeDLYVoyVSpRLTA",
-        "fee_calculator": {
-            "lamportsPerSignature": 5000
-        }
-    }
+    ]
 }
 ```
+
+
+#### SPL TOKEN TRANSFER NEW `SplToken__TransferWithSystem`
+
+```
+{
+    "network_identifier": {
+        "blockchain": "solana",
+        "network": "devnet"
+    },
+    "operations": [
+        {
+            "operation_identifier": {
+                "index": 0
+            },
+            "type": "SplToken__TransferWithSystem",
+            "account": {
+                "address": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH" // system account
+            },
+            "amount": {
+                "value": "-1",
+                "currency": {
+                    "symbol": "3fJRYbtSYZo9SYhwgUBn2zjG98ASy3kuUEnZeHJXqREr",
+                    "decimals": 2
+                }
+            },
+        },
+        {
+            "operation_identifier": {
+                "index": 1
+            },
+            "type": "SplToken__TransferWithSystem",
+            "account": {
+                "address": "CgVKbBwogjaqtGtPLkMBSkhwtkTMLVdSdHM5cWzyxT5n"  // system account
+            },
+            "amount": {
+                "value": "1",
+                "currency": {
+                    "symbol": "3fJRYbtSYZo9SYhwgUBn2zjG98ASy3kuUEnZeHJXqREr",
+                    "decimals": 2
+                }
+            },    
+        }
+    ]
+}
+```
+
 #### SPL TOKEN TRANSFER `SplToken__Transfer`
 
 ```
@@ -64,7 +105,7 @@
             },
             "type": "SplToken__Transfer",
             "account": {
-                "address": "95Dq3sXa3omVjiyxBSD6UMrzPYdmyu6CFCw5wS4rhqgV" // token account
+                "address": "95Dq3sXa3omVjiyxBSD6UMrzPYdmyu6CFCw5wS4rhqgV" // source token account
             },
             "amount": {
                 "value": "-1",
@@ -74,7 +115,7 @@
                 }
             },
             "metadata": {
-                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"
+                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"//required source system adress
             }
         },
         {
@@ -93,16 +134,10 @@
                 }
             },
             "metadata": {
-                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"
+                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH" //required source system adress
             }            
         }
-    ],
-    "metadata": {
-        "blockhash": "42gAeAs9JE1bzqjGQtprYcdi5KyZAQeDLYVoyVSpRLTA",
-        "fee_calculator": {
-            "lamportsPerSignature": 5000
-        }
-    }
+    ]
 }
 ```
 
@@ -122,7 +157,7 @@
             },
             "type": "SplToken__TransferNew",
             "account": {
-                "address": "95Dq3sXa3omVjiyxBSD6UMrzPYdmyu6CFCw5wS4rhqgV" // token account
+                "address": "95Dq3sXa3omVjiyxBSD6UMrzPYdmyu6CFCw5wS4rhqgV" // source token account
             },
             "amount": {
                 "value": "-1",
@@ -132,7 +167,7 @@
                 }
             },
             "metadata": {
-                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"
+                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"//required source system adress
             }
         },
         {
@@ -141,7 +176,7 @@
             },
             "type": "SplToken__TransferNew",
             "account": {
-                "address": "CgVKbBwogjaqtGtPLkMBSkhwtkTMLVdSdHM5cWzyxT5n"  // system account
+                "address": "CgVKbBwogjaqtGtPLkMBSkhwtkTMLVdSdHM5cWzyxT5n"  // destination system account
             },
             "amount": {
                 "value": "1",
@@ -151,7 +186,7 @@
                 }
             },
             "metadata": {
-                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"
+                "authority": "HJGPMwVuqrbm7BDMeA3shLkqdHUru337fgytM7HzqTnH"//required source system adress
             }            
         }
     ],
@@ -186,13 +221,7 @@ Creates new spl token account for reciever
                 "wallet": "42jb8c6XpQ6KXxJEHSWPeoFvyrhuiGvcCJQKumdtW78v" //reciever
             }
         },
-    ],
-    "metadata": {
-        "blockhash": "42gAeAs9JE1bzqjGQtprYcdi5KyZAQeDLYVoyVSpRLTA",
-        "fee_calculator": {
-            "lamportsPerSignature": 5000
-        }
-    }
+    ]
 }
 ```
 

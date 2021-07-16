@@ -130,7 +130,36 @@ func TestConstructionServiceSpl(t *testing.T) {
 			Metadata: m,
 		},
 	}
-	constructionPipe(t, ops2, true)
+	constructionPipe(t, ops2, false)
+
+	ops3 := []*types.Operation{
+		{
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 0,
+			},
+			Type:    solanago.SplToken__TransferWithSystem,
+			Account: fromSystem,
+			Amount: &types.Amount{
+				Value:    "-1",
+				Currency: c,
+			},
+			Metadata: mNil,
+		}, {
+			OperationIdentifier: &types.OperationIdentifier{
+				Index: 1,
+			},
+			Type: solanago.SplToken__TransferWithSystem,
+			Account: &types.AccountIdentifier{
+				Address: "CZDpZ7KeMansnszdEGZ55C4HjGsMSQBzxPu6jqRm6ZrU",
+			}, //systemaccount
+			Amount: &types.Amount{
+				Value:    "1",
+				Currency: c,
+			},
+			Metadata: mNil,
+		},
+	}
+	constructionPipe(t, ops3, false)
 }
 
 func constructionPipe(t *testing.T, ops []*types.Operation, submit bool) {
@@ -196,7 +225,14 @@ func constructionPipe(t *testing.T, ops []*types.Operation, submit bool) {
 			Transaction:       payRes.UnsignedTransaction,
 		},
 	)
-	if ops[0].Type != solanago.SplToken__TransferNew {
+	s, _ := json.MarshalIndent(ops, "", "\t")
+	fmt.Println("Original")
+	fmt.Println(string(s))
+	s1, _ := json.MarshalIndent(parseRes.Operations, "", "\t")
+	fmt.Println("Parsed")
+	fmt.Println(string(s1))
+
+	if !(ops[0].Type == solanago.SplToken__TransferNew || ops[0].Type == solanago.SplToken__TransferWithSystem) {
 		assert.Equal(t, ops[0].Type, parseRes.Operations[0].Type)
 		assert.Equal(t, len(ops), len(parseRes.Operations))
 
@@ -208,16 +244,11 @@ func constructionPipe(t *testing.T, ops []*types.Operation, submit bool) {
 			assert.Equal(t, ops[0].Amount.Currency.Symbol, parseRes.Operations[0].Amount.Currency.Symbol)
 		}
 	} else {
-		assert.Equal(t, parseRes.Operations[0].Type, solanago.SplAssociatedTokenAccount__Create)
-		assert.Equal(t, len(parseRes.Operations), 3)
+		if ops[0].Type == solanago.SplToken__TransferNew {
+			assert.Equal(t, parseRes.Operations[0].Type, solanago.SplAssociatedTokenAccount__Create)
+			assert.Equal(t, len(parseRes.Operations), 3)
+		}
 	}
-
-	s, _ := json.MarshalIndent(ops, "", "\t")
-	fmt.Println("Original")
-	fmt.Println(string(s))
-	s1, _ := json.MarshalIndent(parseRes.Operations, "", "\t")
-	fmt.Println("Parsed")
-	fmt.Println(string(s1))
 
 	combRes, err := constructionAPIService.ConstructionCombine(
 		ctx, &types.ConstructionCombineRequest{

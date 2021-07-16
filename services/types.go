@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
+	solanago "github.com/imerkle/rosetta-solana-go/solana"
 	ss "github.com/portto/solana-go-sdk/client"
 )
 
@@ -54,8 +55,9 @@ type Client interface {
 	) (*types.CallResponse, error)
 }
 type ConstructionMetadata struct {
-	BlockHash     string           `json:"blockhash"`
-	FeeCalculator ss.FeeCalculator `json:"fee_calculator"`
+	BlockHash         string                         `json:"blockhash"`
+	FeeCalculator     ss.FeeCalculator               `json:"fee_calculator"`
+	SplTokenAccMapKey map[int64]solanago.SplAccounts `json:"spl_token_acc_map"`
 }
 
 type MetadataWithFee struct {

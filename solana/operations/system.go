@@ -33,6 +33,7 @@ func (x *SystemOperationMetadata) SetMeta(op *types.Operation) {
 	json.Unmarshal(jsonString, &x)
 }
 func (x *SystemOperationMetadata) ToInstructions(opType string) []solPTypes.Instruction {
+
 	var ins []solPTypes.Instruction
 	switch opType {
 	case solanago.System__CreateAccount:

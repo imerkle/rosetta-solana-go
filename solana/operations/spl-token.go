@@ -21,9 +21,12 @@ type SplTokenOperationMetadata struct {
 	FreezeAuthority string `json:"freeze_authority,omitempty"`
 	Amount          uint64 `json:"amount,omitempty"`
 	Decimals        uint8  `json:"decimals,omitempty"`
+
+	SourceToken      string `json:"source_token,omitempty"`
+	DestinationToken string `json:"destination_token,omitempty"`
 }
 
-func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
+func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation, splTokenAccsMap map[int64]solanago.SplAccounts) {
 	jsonString, _ := json.Marshal(op.Metadata)
 	if op.Amount != nil && x.Amount == 0 {
 		x.Amount = solanago.ValueToBaseAmount(op.Amount.Value)
@@ -40,10 +43,16 @@ func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation) {
 	if op.Amount != nil && x.Decimals == 0 {
 		x.Decimals = uint8(op.Amount.Currency.Decimals)
 	}
+	if w, ok := splTokenAccsMap[op.OperationIdentifier.Index]; ok {
+		x.SourceToken = w.Source
+		x.DestinationToken = w.Destination
+	}
+
 	json.Unmarshal(jsonString, &x)
 }
 
 func (x *SplTokenOperationMetadata) ToInstructions(opType string) []solPTypes.Instruction {
+
 	var ins []solPTypes.Instruction
 	switch opType {
 	case solanago.SplToken__InitializeMint:
@@ -91,6 +100,21 @@ func (x *SplTokenOperationMetadata) ToInstructions(opType string) []solPTypes.In
 		account := ins_create_assoc.Accounts[1].PubKey.ToBase58()
 		ins = append(ins, ins_create_assoc)
 		ins = append(ins, tokenprog.TransferChecked(p(x.Source), p(account), p(x.Mint), p(x.Authority), []common.PublicKey{}, x.Amount, x.Decimals))
+		break
+	case solanago.SplToken__TransferWithSystem:
+		source := x.SourceToken
+		destination := x.DestinationToken
+		if x.SourceToken == "" {
+			in := assotokenprog.CreateAssociatedTokenAccount(p(x.Authority), p(x.Source), p(x.Mint))
+			source = in.Accounts[1].PubKey.ToBase58()
+			ins = append(ins, in)
+		}
+		if x.DestinationToken == "" {
+			in := assotokenprog.CreateAssociatedTokenAccount(p(x.Authority), p(x.Destination), p(x.Mint))
+			destination = in.Accounts[1].PubKey.ToBase58()
+			ins = append(ins, in)
+		}
+		ins = append(ins, tokenprog.TransferChecked(p(source), p(destination), p(x.Mint), p(x.Authority), []common.PublicKey{}, x.Amount, x.Decimals))
 		break
 	}
 	return ins

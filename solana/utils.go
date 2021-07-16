@@ -23,7 +23,7 @@ import (
 func IsBalanceChanging(opType string) bool {
 	a := false
 	switch opType {
-	case "System__CreateAccount", "System__WithdrawFromNonce", "System__Transfer", "SplToken__Transfer", "SplToken__TransferChecked", "Stake__Split", "Stake__Withdraw", "Vote__Withdraw", "SplToken__InitializeAccount":
+	case System__CreateAccount, System__WithdrawFromNonce, System__Transfer, SplToken__Transfer, SplToken__TransferChecked, "Stake__Split", "Stake__Withdraw", "Vote__Withdraw", SplToken__InitializeAccount, SplToken__TransferNew, SplToken__TransferWithSystem:
 		a = true
 	}
 	return a

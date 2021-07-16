@@ -207,3 +207,11 @@ func (ec *Client) Call(
 	}, nil
 
 }
+
+func (ec *Client) GetTokenAccountByMint(ctx context.Context, owner string, mint string) (string, error) {
+	tokenAccs, err := ec.Rpc.GetTokenAccountByMint(ctx, owner, mint)
+	if err != nil || len(tokenAccs) == 0 {
+		return "", fmt.Errorf("No Token Account Found")
+	}
+	return tokenAccs[0].Pubkey, nil
+}

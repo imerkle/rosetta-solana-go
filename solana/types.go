@@ -64,8 +64,10 @@ const (
 	// genesis block.
 	GenesisBlockIndex = int64(0)
 
-	Separator    = "__"
-	WithNonceKey = "with_nonce"
+	Separator          = "__"
+	WithNonceKey       = "with_nonce"
+	SplSystemAccMapKey = "spl_system_acc_map"
+	SplTokenAccMapKey  = "spl_token_acc_map"
 
 	MainnetGenesisHash = "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
 	TestnetGenesisHash = "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY"
@@ -96,6 +98,7 @@ const (
 	SplToken_FreezeAccount            = "SplToken_FreezeAccount"
 	SplToken__TransferChecked         = "SplToken__TransferChecked"
 	SplToken__TransferNew             = "SplToken__TransferNew"
+	SplToken__TransferWithSystem      = "SplToken__TransferWithSystem"
 	SplAssociatedTokenAccount__Create = "SplAssociatedTokenAccount__Create"
 	Unknown                           = "Unknown"
 )
@@ -151,6 +154,7 @@ var (
 		SplToken_FreezeAccount,
 		SplToken__TransferChecked,
 		SplToken__TransferNew,
+		SplToken__TransferWithSystem,
 		SplAssociatedTokenAccount__Create,
 		Unknown,
 	}
@@ -213,4 +217,10 @@ type GetConfirmedBlockResult struct {
 type WithNonce struct {
 	Account   string `json:"account"`
 	Authority string `json:"authority,omitempty"`
+}
+
+type SplAccounts struct {
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+	Mint        string `json:"mint"`
 }
