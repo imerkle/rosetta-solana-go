@@ -1,5 +1,10 @@
 ##### json request body for `construction/preprocess`
 
+send this to construction/preprocess and follow the flow of operations https://www.rosetta-api.org/docs/flow.html
+
+see https://github.com/imerkle/rosetta-solana-go/blob/master/services/construction_service_test.go#L165 for example
+
+
 #### NATIVE SOL Transfer `System__Transfer`
 ```
 {
@@ -42,10 +47,11 @@
         }
     ]
 }
+
 ```
-
-
 #### SPL TOKEN TRANSFER NEW `SplToken__TransferWithSystem`
+
+this abstracts away the need to deal with token accounts
 
 ```
 {
@@ -88,9 +94,11 @@
         }
     ]
 }
-```
 
+```
 #### SPL TOKEN TRANSFER `SplToken__Transfer`
+
+transfer spl with token accounts
 
 ```
 {
@@ -142,7 +150,6 @@
 ```
 
 #### SPL TOKEN TRANSFER NEW `SplToken__TransferNew`
-
 
 ```
 {
