@@ -185,9 +185,11 @@ func constructionPipe(t *testing.T, ops []*types.Operation, submit bool) {
 		Operations:        ops,
 		Metadata:          map[string]interface{}{},
 	})
+	var optsjson map[string]interface{}
+	unmarshalJSONMap(preRes.Options, &optsjson)
 	metaRes, err := constructionAPIService.ConstructionMetadata(ctx, &types.ConstructionMetadataRequest{
 		NetworkIdentifier: cfg.Network,
-		Options:           preRes.Options,
+		Options:           optsjson,
 	})
 	payRes, err := constructionAPIService.ConstructionPayloads(ctx, &types.ConstructionPayloadsRequest{
 		NetworkIdentifier: cfg.Network,

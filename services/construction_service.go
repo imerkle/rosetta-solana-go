@@ -120,11 +120,17 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 		hash = recentBlockhash.Blockhash
 		fee = recentBlockhash.FeeCalculator
 	}
-	var SplTokenAccMap map[int64]solanago.SplAccounts = make(map[int64]solanago.SplAccounts)
-	if w, ok := request.Options[solanago.SplSystemAccMapKey]; ok {
 
-		m := w.(map[int64]solanago.SplAccounts)
-		for k, v := range m {
+	var SplTokenAccMap map[string]solanago.SplAccounts = make(map[string]solanago.SplAccounts)
+
+	if w, ok := request.Options[solanago.SplSystemAccMapKey]; ok {
+		w1 := w.(map[string]interface{})
+		if err := unmarshalJSONMap(w1, &SplTokenAccMap); err != nil {
+			return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
+		}
+
+		for k, v := range SplTokenAccMap {
+
 			source, _ := s.client.GetTokenAccountByMint(ctx, v.Source, v.Mint)
 			destination, _ := s.client.GetTokenAccountByMint(ctx, v.Destination, v.Mint)
 			SplTokenAccMap[k] = solanago.SplAccounts{

@@ -2,6 +2,7 @@ package operations
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
@@ -26,7 +27,7 @@ type SplTokenOperationMetadata struct {
 	DestinationToken string `json:"destination_token,omitempty"`
 }
 
-func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation, splTokenAccsMap map[int64]solanago.SplAccounts) {
+func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation, splTokenAccsMap map[string]solanago.SplAccounts) {
 	jsonString, _ := json.Marshal(op.Metadata)
 	if op.Amount != nil && x.Amount == 0 {
 		x.Amount = solanago.ValueToBaseAmount(op.Amount.Value)
@@ -43,7 +44,7 @@ func (x *SplTokenOperationMetadata) SetMeta(op *types.Operation, splTokenAccsMap
 	if op.Amount != nil && x.Decimals == 0 {
 		x.Decimals = uint8(op.Amount.Currency.Decimals)
 	}
-	if w, ok := splTokenAccsMap[op.OperationIdentifier.Index]; ok {
+	if w, ok := splTokenAccsMap[fmt.Sprint(op.OperationIdentifier.Index)]; ok {
 		x.SourceToken = w.Source
 		x.DestinationToken = w.Destination
 	}
