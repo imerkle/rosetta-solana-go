@@ -77,7 +77,7 @@ func (ec *Client) BlockTransaction(
 ) (*RosettaTypes.Transaction, error) {
 	tx, err := ec.Rpc.GetConfirmedTransactionParsed(ctx, blockTransactionRequest.TransactionIdentifier.Hash)
 	if err != nil {
-		return nil, fmt.Errorf("Error tx")
+		return nil, err
 	}
 	rosTx := ToRosTx(tx.Transaction)
 	return &rosTx, nil

@@ -72,11 +72,7 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 				Metadata:            inInterface,
 			})
 		} else {
-			opType := getOperationTypeWithProgram(ins.Program, ins.Parsed.InstructionType)
 
-			if !Contains(OperationTypes, opType) {
-				opType = "Unknown"
-			}
 			jsonString, _ := json.Marshal(ins.Parsed.Info)
 
 			parsedInstructionMeta := ParsedInstructionMeta{}
@@ -88,6 +84,12 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 			inrec, _ := json.Marshal(parsedInstructionMetaInterface)
 			json.Unmarshal(inrec, &inInterface)
 
+			opType := getOperationTypeWithProgram(ins.Program, ins.Parsed.InstructionType)
+			if !Contains(OperationTypes, opType) {
+				inInterface["instruction_type"] = ins.Parsed.InstructionType
+				inInterface["program"] = ins.Program
+				opType = "Unknown"
+			}
 			if IsBalanceChanging(opType) {
 				if parsedInstructionMeta.Decimals == 0 {
 					parsedInstructionMeta.Decimals = Decimals
@@ -255,10 +257,10 @@ func ToParsedTransaction(tx solPTypes.Transaction) (solPTypes.ParsedTransaction,
 		}
 		parsedIns = append(parsedIns, p)
 	}
-	var acckeys []string
+	var acckeys []solPTypes.ParsedAccKey
 	var sigs []string
 	for _, v := range tx.Message.Accounts {
-		acckeys = append(acckeys, v.ToBase58())
+		acckeys = append(acckeys, solPTypes.ParsedAccKey{PubKey: v.ToBase58()})
 	}
 	for _, v := range tx.Signatures {
 		sigs = append(sigs, v.ToBase58())
