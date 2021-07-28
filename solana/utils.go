@@ -23,7 +23,7 @@ import (
 func IsBalanceChanging(opType string) bool {
 	a := false
 	switch opType {
-	case System__CreateAccount, System__WithdrawFromNonce, System__Transfer, SplToken__Transfer, SplToken__TransferChecked, "Stake__Split", "Stake__Withdraw", "Vote__Withdraw", SplToken__InitializeAccount, SplToken__TransferNew, SplToken__TransferWithSystem:
+	case System__CreateAccount, System__WithdrawFromNonce, System__Transfer, SplToken__Transfer, SplToken__TransferChecked, "Stake__Split", "Stake__Withdraw", "Vote__Withdraw", SplToken__TransferNew, SplToken__TransferWithSystem:
 		a = true
 	}
 	return a
@@ -167,7 +167,20 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 					account = types.AccountIdentifier{
 						Address: parsedInstructionMeta.Source,
 					}
+				} else {
+					if parsedInstructionMeta.Owner != "" {
+						account = types.AccountIdentifier{
+							Address: parsedInstructionMeta.Owner,
+						}
+					} else {
+						if parsedInstructionMeta.Account != "" {
+							account = types.AccountIdentifier{
+								Address: parsedInstructionMeta.Account,
+							}
+						}
+					}
 				}
+
 				operations = append(operations, &types.Operation{
 					OperationIdentifier: &oi,
 					Type:                opType,
@@ -253,7 +266,7 @@ func ToParsedTransaction(tx solPTypes.Transaction) (solPTypes.ParsedTransaction,
 		if err != nil {
 			//cannot parse
 			p = solPTypes.ParsedInstruction{}
-			return solPTypes.ParsedTransaction{}, fmt.Errorf("Cannot parse Instruction")
+			return solPTypes.ParsedTransaction{}, err
 		}
 		parsedIns = append(parsedIns, p)
 	}
@@ -291,7 +304,7 @@ func ParseInstruction(ins solPTypes.Instruction) (solPTypes.ParsedInstruction, e
 		parsedInstruction, err = assotokenprog.ParseAssocToken(ins)
 		break
 	default:
-		return parsedInstruction, fmt.Errorf("Cannot parse instruction")
+		//return parsedInstruction, fmt.Errorf("Cannot parse instruction")
 	}
 	if err != nil {
 		return parsedInstruction, err
