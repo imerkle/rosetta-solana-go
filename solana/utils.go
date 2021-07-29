@@ -118,16 +118,25 @@ func GetRosOperationsFromTx(tx solPTypes.ParsedTransaction, status string) []*ty
 					}
 				}
 
+				source := parsedInstructionMeta.Source
+				if source == "" {
+					source = parsedInstructionMeta.Owner
+				}
 				sender := types.AccountIdentifier{
-					Address:  parsedInstructionMeta.Source,
+					Address:  source,
 					Metadata: map[string]interface{}{},
 				}
 				senderAmt := types.Amount{
 					Value:    "-" + fmt.Sprint(parsedInstructionMeta.Amount),
 					Currency: &currency,
 				}
+
+				destination := parsedInstructionMeta.Destination
+				if destination == "" {
+					destination = parsedInstructionMeta.NewAccount
+				}
 				receiver := types.AccountIdentifier{
-					Address:  parsedInstructionMeta.Destination,
+					Address:  destination,
 					Metadata: map[string]interface{}{},
 				}
 				receiverAmt := types.Amount{

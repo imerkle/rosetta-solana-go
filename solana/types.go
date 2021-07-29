@@ -194,6 +194,7 @@ type ParsedInstructionMeta struct {
 	Owner        string            `json:"owner,omitempty"`
 	Account      string            `json:"account,omitempty"`
 	Destination  string            `json:"destination,omitempty"`
+	NewAccount   string            `json:"newAccount,omitempty"`
 	Mint         string            `json:"mint,omitempty"`
 	Decimals     uint8             `json:"decimals,omitempty"`
 	TokenAmount  OpMetaTokenAmount `json:"tokenAmount,omitempty"`
