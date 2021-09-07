@@ -1,6 +1,7 @@
 package solanago
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -257,7 +258,10 @@ func GetWithNonce(m map[string]interface{}) (WithNonce, bool) {
 func GetTxFromStr(t string) (solPTypes.Transaction, error) {
 	signedTx, err := base58.Decode(t)
 	if err != nil {
-		return solPTypes.Transaction{}, err
+		signedTx, err = hex.DecodeString(t)
+		if err != nil {
+			return solPTypes.Transaction{}, err
+		}
 	}
 
 	tx, err := solPTypes.TransactionDeserialize(signedTx)
