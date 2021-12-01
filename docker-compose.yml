@@ -10,5 +10,5 @@ services:
     environment:
       - RPC_URL=${RPC_URL}
       - PORT=8080
-      - NETWORK=${TESTNET}
+      - NETWORK=${NETWORK:-TESTNET}
       - MODE=${MODE}
