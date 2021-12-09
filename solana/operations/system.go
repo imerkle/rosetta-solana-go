@@ -2,7 +2,6 @@ package operations
 
 import (
 	"encoding/json"
-
 	"github.com/coinbase/rosetta-sdk-go/types"
 	solanago "github.com/imerkle/rosetta-solana-go/solana"
 	"github.com/portto/solana-go-sdk/common"
@@ -21,6 +20,7 @@ type SystemOperationMetadata struct {
 
 func (x *SystemOperationMetadata) SetMeta(op *types.Operation) {
 	jsonString, _ := json.Marshal(op.Metadata)
+	json.Unmarshal(jsonString, &x)
 	if x.Lamports == 0 {
 		x.Lamports = solanago.ValueToBaseAmount(op.Amount.Value)
 	}
@@ -30,7 +30,6 @@ func (x *SystemOperationMetadata) SetMeta(op *types.Operation) {
 	if x.Authority == "" {
 		x.Authority = x.Source
 	}
-	json.Unmarshal(jsonString, &x)
 }
 func (x *SystemOperationMetadata) ToInstructions(opType string) []solPTypes.Instruction {
 
