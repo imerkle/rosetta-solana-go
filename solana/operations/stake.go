@@ -8,7 +8,6 @@ import (
 	"github.com/portto/solana-go-sdk/stakeprog"
 	"github.com/portto/solana-go-sdk/sysprog"
 	solPTypes "github.com/portto/solana-go-sdk/types"
-	"log"
 )
 
 type StakeOperationMetadata struct {
@@ -96,11 +95,6 @@ func (x *StakeOperationMetadata) ToInstructions(opType string) []solPTypes.Instr
 				p(x.LockupCustodian)))
 		break
 	}
-
-	log.Printf("---------- Request ----------")
-	log.Printf("x: %+v\n", x)
-	log.Printf("---------- Instruction ----------")
-	log.Printf("ins: %+v\n", ins)
 
 	return ins
 }
