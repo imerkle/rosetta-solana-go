@@ -262,6 +262,11 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			s.SetMeta(tmpOP)
 			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
 			break
+		case "Stake":
+			s := operations.StakeOperationMetadata{}
+			s.SetMeta(tmpOP)
+			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
+			break
 		default:
 			return nil, wrapErr(ErrUnableToParseIntermediateResult, fmt.Errorf("Operation not implemented for construction"))
 		}
