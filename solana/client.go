@@ -124,7 +124,7 @@ func (ec *Client) Balance(
 	block *RosettaTypes.PartialBlockIdentifier,
 ) (*RosettaTypes.AccountBalanceResponse, error) {
 
-	var symbols []string
+	//var symbols []string
 	if block != nil {
 		return nil, fmt.Errorf("block hash balance not supported")
 	}
@@ -144,26 +144,26 @@ func (ec *Client) Balance(
 		Metadata: nil,
 	}
 
-	tokenAccs, err := ec.Rpc.GetTokenAccountsByOwner(ctx, account.Address)
-
-	if err == nil {
-		for _, tokenAcc := range tokenAccs {
-			symbol := tokenAcc.Account.Data.Parsed.Info.Mint
-			b := &RosettaTypes.Amount{
-				Value: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Amount,
-				Currency: &RosettaTypes.Currency{
-					Symbol:   symbol,
-					Decimals: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Decimals,
-					Metadata: nil,
-				},
-				Metadata: nil,
-			}
-			balances = append(balances, b)
-		}
-	}
-	if len(symbols) == 0 || Contains(symbols, Symbol) {
-		balances = append(balances, nativeBalance)
-	}
+	//tokenAccs, err := ec.Rpc.GetTokenAccountsByOwner(ctx, account.Address)
+	//
+	//if err == nil {
+	//	for _, tokenAcc := range tokenAccs {
+	//		symbol := tokenAcc.Account.Data.Parsed.Info.Mint
+	//		b := &RosettaTypes.Amount{
+	//			Value: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Amount,
+	//			Currency: &RosettaTypes.Currency{
+	//				Symbol:   symbol,
+	//				Decimals: tokenAcc.Account.Data.Parsed.Info.TokenAmount.Decimals,
+	//				Metadata: nil,
+	//			},
+	//			Metadata: nil,
+	//		}
+	//		balances = append(balances, b)
+	//	}
+	//}
+	//if len(symbols) == 0 || Contains(symbols, Symbol) {
+	balances = append(balances, nativeBalance)
+	//}
 	slot, err := ec.Rpc.GetSlot(ctx)
 
 	return &RosettaTypes.AccountBalanceResponse{

@@ -101,6 +101,14 @@ const (
 	SplToken__TransferWithSystem      = "SplToken__TransferWithSystem"
 	SplAssociatedTokenAccount__Create = "SplAssociatedTokenAccount__Create"
 	Unknown                           = "Unknown"
+	Stake__CreateStakeAccount         = "Stake__CreateStakeAccount"
+	Stake__DelegateStake              = "Stake__DelegateStake"
+	Stake__CreateStakeAndDelegate     = "Stake__CreateStakeAndDelegate"
+	Stake__DeactivateStake            = "Stake__DeactivateStake"
+	Stake__WithdrawStake              = "Stake__WithdrawStake"
+	Stake__Merge                      = "Stake__Merge"
+	Stake__Split                      = "Stake__Split"
+	Stake__Authorize                  = "Stake__Authorize"
 )
 
 var (
@@ -156,6 +164,14 @@ var (
 		SplToken__TransferNew,
 		SplToken__TransferWithSystem,
 		SplAssociatedTokenAccount__Create,
+		Stake__CreateStakeAccount,
+		Stake__DelegateStake,
+		Stake__CreateStakeAndDelegate,
+		Stake__DeactivateStake,
+		Stake__WithdrawStake,
+		Stake__Merge,
+		Stake__Split,
+		Stake__Authorize,
 		Unknown,
 	}
 
