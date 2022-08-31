@@ -205,6 +205,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
+	var feePayer common.PublicKey
 	var matchedOperationHashMap map[int64]bool = make(map[int64]bool)
 	for _, op := range request.Operations {
 		var cont bool
@@ -266,13 +267,20 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 			s := operations.StakeOperationMetadata{}
 			s.SetMeta(tmpOP)
 			instructions = append(instructions, (s.ToInstructions(tmpOP.Type))...)
+			if tmpOP.Type == solanago.Stake__WithdrawStake && s.FeePayer != "" {
+				feePayer = common.PublicKeyFromString(s.FeePayer)
+			}
 			break
 		default:
 			return nil, wrapErr(ErrUnableToParseIntermediateResult, fmt.Errorf("Operation not implemented for construction"))
 		}
 	}
 	signers := solPTypes.GetUniqueSigners(instructions)
-	feePayer := common.PublicKeyFromString(signers[0])
+
+	if feePayer == (common.PublicKey{}) {
+		feePayer = common.PublicKeyFromString(signers[0])
+	}
+
 	blockHash := meta.BlockHash
 	var message solPTypes.Message
 

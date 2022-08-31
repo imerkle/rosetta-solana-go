@@ -26,6 +26,7 @@ type StakeOperationMetadata struct {
 	Authority              string `json:"authority,omitempty"`
 	NewAuthority           string `json:"newAuthority,omitempty"`
 	StakeAuthorizationType uint32 `json:"stakeAuthorizationType,omitempty"`
+	FeePayer               string `json:"feePayer,omitempty"`
 }
 
 func (x *StakeOperationMetadata) SetMeta(op *types.Operation) {
@@ -62,13 +63,7 @@ func (x *StakeOperationMetadata) ToInstructions(opType string) []solPTypes.Instr
 		ins = append(ins, stakeprog.Deactivate(p(x.Stake), p(x.Staker)))
 		break
 	case solanago.Stake__WithdrawStake:
-		ins = append(ins,
-			stakeprog.Withdraw(
-				p(x.Stake),
-				p(x.Withdrawer),
-				p(x.WithdrawDestination),
-				x.Lamports,
-				p(x.LockupCustodian)))
+		ins = addWithdrawStakeInsWithOptionalFeePayer(ins, x)
 		break
 	case solanago.Stake__Merge:
 		ins = append(ins,
@@ -124,4 +119,21 @@ func addCreateStakeAccountIns(ins []solPTypes.Instruction, x *StakeOperationMeta
 
 func addDelegateStakeIns(ins []solPTypes.Instruction, x *StakeOperationMetadata) []solPTypes.Instruction {
 	return append(ins, stakeprog.DelegateStake(p(x.Stake), p(x.Staker), p(x.VoteAccount)))
+}
+
+func addWithdrawStakeInsWithOptionalFeePayer(ins []solPTypes.Instruction, x *StakeOperationMetadata) []solPTypes.Instruction {
+	withdrawIns := stakeprog.Withdraw(
+		p(x.Stake),
+		p(x.Withdrawer),
+		p(x.WithdrawDestination),
+		x.Lamports,
+		p(x.LockupCustodian))
+
+	feePayerPubkey := p(x.FeePayer)
+
+	if feePayerPubkey != (common.PublicKey{}) {
+		withdrawIns.Accounts = append(withdrawIns.Accounts, solPTypes.AccountMeta{PubKey: feePayerPubkey, IsSigner: true, IsWritable: false})
+	}
+
+	return append(ins, withdrawIns)
 }
